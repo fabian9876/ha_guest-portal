@@ -11,5 +11,8 @@
   "version": "0.4.0",
   "dependencies": [
     "panel_custom"
+  ],
+  "requirements": [
+    "segno==1.6.1"
   ]
 }

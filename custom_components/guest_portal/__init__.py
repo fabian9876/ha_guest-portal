@@ -21,6 +21,8 @@ from .api import (
     GuestLoginView,
     GuestLogoutView,
     GuestPortalPageView,
+    GuestQrLoginView,
+    GuestQrImageView,
     GuestStatesView,
     _new_session,
 )
@@ -67,6 +69,8 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     hass.data.setdefault(DOMAIN, {"entries": {}, "active_entry": None})
     for view in (
         GuestPortalPageView,
+        GuestQrLoginView,
+        GuestQrImageView,
         GuestAdminPageView,
         GuestAdminApiView,
         GuestLoginView,
@@ -131,6 +135,9 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             return
         guest_id = call.data["guest_id"]
         data["storage"].data["guests"].pop(guest_id, None)
+        for digest, item in list(data["storage"].data.setdefault("qr_tokens", {}).items()):
+            if item.get("guest_id") == guest_id:
+                data["storage"].data["qr_tokens"].pop(digest, None)
         for token, session in list(data["sessions"].items()):
             if session["guest_id"] == guest_id:
                 data["sessions"].pop(token, None)
@@ -147,6 +154,9 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             return
         guest["enabled"] = call.data["enabled"]
         if not guest["enabled"]:
+            for digest, item in list(data["storage"].data.setdefault("qr_tokens", {}).items()):
+                if item.get("guest_id") == call.data["guest_id"]:
+                    data["storage"].data["qr_tokens"].pop(digest, None)
             for token, session in list(data["sessions"].items()):
                 if session["guest_id"] == call.data["guest_id"]:
                     data["sessions"].pop(token, None)
@@ -241,6 +251,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     domain_data = hass.data[DOMAIN]
     storage = GuestStorage(hass)
     await storage.async_load()
+    storage.data.setdefault("qr_tokens", {})
     data = {
         "entry": entry,
         "storage": storage,

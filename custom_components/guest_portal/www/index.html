@@ -56,6 +56,12 @@ button{min-height:42px;border:0;background:var(--accent);color:white;cursor:poin
  $("otpButton").addEventListener("click",async()=>{try{const d=await api("/login",{method:"POST",body:JSON.stringify({challenge_id:challenge,otp:$("otp").value})});token=d.token;sessionStorage.setItem("guest_portal_token",token);await showPortal()}catch(e){message(e.message)}});
  $("filter").addEventListener("input",render);
  $("logout").addEventListener("click",async()=>{try{await api("/logout",{method:"POST"})}catch(e){}token=null;sessionStorage.removeItem("guest_portal_token");$("portal").classList.add("hidden");$("login").classList.remove("hidden");message("Du wurdest abgemeldet.")});
- if(token)showPortal().catch(()=>{token=null;sessionStorage.removeItem("guest_portal_token")});
+ const qrAccess=new URLSearchParams(location.hash.slice(1)).get("access");
+ if(qrAccess){
+  history.replaceState(null,"",location.pathname+location.search);
+  api("/qr-login",{method:"POST",body:JSON.stringify({access_token:qrAccess})})
+   .then(d=>{token=d.token;sessionStorage.setItem("guest_portal_token",token);return showPortal()})
+   .catch(e=>{token=null;sessionStorage.removeItem("guest_portal_token");message(e.message)});
+ }else if(token)showPortal().catch(()=>{token=null;sessionStorage.removeItem("guest_portal_token")});
 })();
 </script></body></html>
