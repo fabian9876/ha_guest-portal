@@ -237,7 +237,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
         states = [hass.states.get(entity_id) for entity_id in entities]
         if not states or any(state is None or state.state in {"unknown", "unavailable"} for state in states):
-            desired = False
+            data["alone_mode"] = False
+            hass.bus.async_fire(EVENT_ALONE_MODE_CHANGED, {
+                "entry_id": entry.entry_id, "enabled": False, "source": "presence_unknown"
+            })
+            return
         else:
             at_home = any(state.state in {"home", zone_name} for state in states)
             if at_home:
@@ -268,7 +272,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             data["presence_task"] = hass.async_create_task(delayed_update())
 
     if auto_mode and entities:
-        async_track_state_change_event(hass, entities, lambda event: hass.async_create_task(update_presence()))
+        unsub = async_track_state_change_event(
+            hass, entities, lambda event: hass.async_create_task(update_presence())
+        )
+        entry.async_on_unload(unsub)
         await update_presence()
 
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
