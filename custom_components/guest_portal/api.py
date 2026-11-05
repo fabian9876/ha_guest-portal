@@ -358,7 +358,7 @@ class GuestAdminApiView(HomeAssistantView):
         return web.json_response({
             "guests": guests,
             "pending": pending,
-            "entities": sorted(state.entity_id for state in request.app["hass"].states.async_all()),
+            "entities": [\n                {\n                    "entity_id": state.entity_id,\n                    "name": state.attributes.get("friendly_name", state.entity_id),\n                    "state": state.state,\n                    "unit": state.attributes.get("unit_of_measurement"),\n                }\n                for state in sorted(\n                    request.app["hass"].states.async_all(),\n                    key=lambda item: item.entity_id,\n                )\n            ],
             "alone_mode": data["alone_mode"],
         })
 
