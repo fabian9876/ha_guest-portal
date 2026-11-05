@@ -25,7 +25,7 @@ input,select{width:100%}select[multiple]{height:9rem}button{cursor:pointer;margi
 <div><label>Steuerbare Geräte</label><select id="write_entities" multiple></select></div>
 <div><label>Zusätzliche Geräte im Allein-Modus (lesen)</label><select id="alone_entities" multiple></select></div>
 <div><label>Zusätzliche Geräte im Allein-Modus (steuern)</label><select id="alone_write_entities" multiple></select></div>
-</div><button type="submit">Gast speichern</button></form>
+</div><button id="submitButton" type="submit">Gast speichern</button><button type="button" id="cancelEdit">Abbrechen</button></form>
 </section>
 <section><h2>Gäste</h2><div id="guests"></div></section>
 <script>
@@ -35,7 +35,7 @@ const msg=t=>$("message").textContent=t;
 const post=async body=>{const r=await fetch(api,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Fehler");return d};
 const selected=id=>Array.from($(id).selectedOptions).map(o=>o.value);
 const button=(label,fn)=>{const b=document.createElement("button");b.textContent=label;b.addEventListener("click",fn);return b};
-let alone=false;
+let alone=false, editingId=null;
 async function load(){
  try{
  const r=await fetch(api);const d=await r.json();if(!r.ok)throw new Error(d.error||"Kein Zugriff");
@@ -52,16 +52,22 @@ async function load(){
  if(!d.guests.length){$("guests").textContent="Noch keine Gäste angelegt."}
  for(const guest of d.guests){const el=document.createElement("div");el.className="guest";const title=document.createElement("strong");title.textContent=guest.username+" ("+guest.guest_id+") – "+(guest.enabled?"aktiv":"deaktiviert");el.append(title);
  const detail=document.createElement("p");detail.textContent="Lesen: "+guest.read_entities.length+" · Steuern: "+guest.write_entities.length+" · Allein-Modus extra: "+guest.alone_entities.length+" / "+guest.alone_write_entities.length;el.append(detail);
+ el.append(button("Bearbeiten",()=>{editingId=guest.guest_id;$("username").value=guest.username;$("guest_id").value=guest.guest_id;$("password").value="";
+ for(const id of ["read_entities","write_entities","alone_entities","alone_write_entities"]){const allowed=guest[id];for(const option of $(id).options)option.selected=allowed.includes(option.value)}
+ $("password").required=false;$("submitButton").textContent="Änderungen speichern";msg("Bearbeite "+guest.username)}));
  el.append(button(guest.enabled?"Deaktivieren":"Aktivieren",async()=>{try{await post({action:"set_guest_enabled",guest_id:guest.guest_id,enabled:!guest.enabled});await load()}catch(e){msg(e.message)}}));
  el.append(button("Löschen",async()=>{if(!confirm("Gast "+guest.username+" löschen?"))return;try{await post({action:"remove_guest",guest_id:guest.guest_id});await load()}catch(e){msg(e.message)}}));$("guests").append(el)}
  msg("Verwaltung geladen.");
  }catch(e){msg(e.message)}
 }
 $("create").addEventListener("submit",async e=>{e.preventDefault();try{
- await post({action:"add_guest",username:$("username").value,guest_id:$("guest_id").value,password:$("password").value,
- read_entities:selected("read_entities"),write_entities:selected("write_entities"),alone_entities:selected("alone_entities"),alone_write_entities:selected("alone_write_entities")});
- $("create").reset();msg("Gast wurde angelegt.");await load()
+ const payload={username:$("username").value,guest_id:$("guest_id").value,password:$("password").value,
+ read_entities:selected("read_entities"),write_entities:selected("write_entities"),alone_entities:selected("alone_entities"),alone_write_entities:selected("alone_write_entities")};
+ if(editingId){payload.action="update_guest";payload.guest_id=editingId;await post(payload);msg("Gast wurde aktualisiert.")}
+ else{payload.action="add_guest";await post({...payload,action:"add_guest"});msg("Gast wurde angelegt.")}
+ editingId=null;$("create").reset();$("password").required=true;$("submitButton").textContent="Gast speichern";await load()
 }catch(err){msg(err.message)}});
+$("cancelEdit").addEventListener("click",()=>{editingId=null;$("create").reset();$("password").required=true;$("submitButton").textContent="Gast speichern";msg("Bearbeitung abgebrochen.")});
 $("modeToggle").addEventListener("click",async()=>{try{await post({action:"set_alone_mode",enabled:!alone});await load()}catch(e){msg(e.message)}});
 load();
 })();
