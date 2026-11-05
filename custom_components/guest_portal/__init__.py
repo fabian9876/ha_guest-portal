@@ -13,6 +13,8 @@ from homeassistant.helpers import selector
 from homeassistant.helpers.event import async_track_state_change_event
 
 from .api import (
+    GuestAdminApiView,
+    GuestAdminPageView,
     GuestApprovalView,
     GuestControlView,
     GuestLoginView,
@@ -60,6 +62,8 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     hass.data.setdefault(DOMAIN, {"entries": {}, "active_entry": None})
     for view in (
         GuestPortalPageView,
+        GuestAdminPageView,
+        GuestAdminApiView,
         GuestLoginView,
         GuestApprovalView,
         GuestLogoutView,
