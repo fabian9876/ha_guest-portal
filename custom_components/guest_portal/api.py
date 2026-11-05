@@ -133,7 +133,7 @@ class GuestLoginView(HomeAssistantView):
              if g.get("username", "").casefold() == username.casefold()),
             None,
         )
-        if not guest or not guest.get("enabled", True):
+        if not guest or not data["access_manager"].guest_is_active(guest):
             return _json_error("Invalid username or password.", 401)
         if not await data["storage"].async_verify_password(
             password, guest["salt"], guest["password_hash"]
@@ -437,6 +437,19 @@ class GuestAdminApiView(HomeAssistantView):
                 "created_at": int(time.time()),
                 "expires_at": expires_at,
             }
+            profile_id = body.get("profile_id")
+            if profile_id:
+                profile = data["storage"].data.setdefault("profiles", {}).get(profile_id)
+                if not profile:
+                    data["storage"].data["guests"].pop(guest_id, None)
+                    return _json_error("Permission profile not found.", 404)
+                guest_record = data["storage"].data["guests"][guest_id]
+                for field in ("read_entities", "write_entities", "alone_entities", "alone_write_entities"):
+                    guest_record[field] = list(profile.get(field, []))
+            data["access_manager"].append_audit(data, {
+                "guest_id": guest_id, "username": username,
+                "operation": "create_guest", "allowed": True,
+            })
             await data["storage"].async_save()
             return web.json_response({"status": "created"})
         if action == "update_guest":
@@ -476,6 +489,10 @@ class GuestAdminApiView(HomeAssistantView):
                 for token, session in list(data["sessions"].items()):
                     if session["guest_id"] == guest_id:
                         data["sessions"].pop(token, None)
+            data["access_manager"].append_audit(data, {
+                "guest_id": guest_id, "username": username,
+                "operation": "update_guest", "allowed": True,
+            })
             await data["storage"].async_save()
             return web.json_response({"status": "updated"})
         if action in {"remove_guest", "set_guest_enabled"}:
@@ -491,6 +508,9 @@ class GuestAdminApiView(HomeAssistantView):
                 guest["enabled"] = enabled
             if not enabled:
                 data["access_manager"].revoke_guest_sessions(data, guest_id)
+            data["access_manager"].append_audit(data, {
+                "guest_id": guest_id, "operation": action, "allowed": True,
+            })
             await data["storage"].async_save()
             return web.json_response({"status": "ok"})
         if action == "revoke_guest_sessions":
