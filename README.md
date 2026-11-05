@@ -25,6 +25,23 @@
 - Responsive Darstellung für Desktop und Smartphone.
 - Getrennte Anmeldung für Gäste; Berechtigungen werden serverseitig geprüft.
 
+## Zentrale Gastverwaltung
+
+Die Architektur enthält jetzt einen zentralen Policy-Entscheidungspunkt für alle
+von dieser Integration angebotenen Gastzugriffe. Lese- und Steuerrechte werden
+serverseitig geprüft und Zugriffsentscheidungen als Home-Assistant-Event
+\u0060guest_portal_access_decision\u0060 veröffentlicht.
+
+**Wichtige Systemgrenze:** Das ist keine globale Filterung der nativen Home-
+Assistant-Oberfläche, REST-/WebSocket-API oder Companion-App. Home Assistant
+bietet dafür keinen allgemeinen unterstützten Per-Entity-Hook für Custom
+Integrations. Gäste müssen deshalb ausschließlich die Gastzugänge dieser
+Integration verwenden und dürfen keinen uneingeschränkten HA-Account oder
+dauerhaften HA-Token erhalten.
+
+Die technische Aufteilung, Vertrauensgrenzen und nächsten Ausbaustufen stehen
+in der [Architekturdokumentation](docs/architecture.md).
+
 ## Features in 0.4.0
 
 - HACS custom integration and Home Assistant config/options flow.
