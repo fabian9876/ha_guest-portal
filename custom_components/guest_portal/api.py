@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import io
 import re
 import secrets
 import time
@@ -51,6 +52,9 @@ def _new_session(hass, data: dict, guest_id: str) -> str:
         CONF_SESSION_MINUTES,
         data["entry"].data.get(CONF_SESSION_MINUTES, 480),
     ))
+    guest = data["storage"].data["guests"].get(guest_id)
+    if guest:
+        guest["last_seen_at"] = int(time.time())
     data["sessions"][token] = {
         "guest_id": guest_id,
         "created": time.time(),
@@ -333,6 +337,81 @@ class GuestPortalPageView(HomeAssistantView):
         return web.Response(text=content, content_type="text/html")
 
 
+class GuestQrLoginView(HomeAssistantView):
+    """Exchange a QR access token for a scoped guest session."""
+    url = "/api/guest_portal/qr-login"
+    name = "api:guest_portal:qr_login"
+    requires_auth = False
+
+    async def post(self, request: web.Request) -> web.Response:
+        data = _active_entry_data(request.app["hass"])
+        if data is None:
+            return _json_error("Guest Portal is not configured.", 503)
+        if not _rate_allowed(data, request.remote or "unknown"):
+            return _json_error("Too many attempts. Try again later.", 429)
+        try:
+            body = await request.json()
+        except (ValueError, TypeError):
+            return _json_error("Invalid JSON.")
+        raw_token = str(body.get("access_token", ""))
+        if not raw_token or len(raw_token) > 128:
+            return _json_error("QR access is invalid or expired.", 401)
+        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+        record = data["storage"].data.setdefault("qr_tokens", {}).get(token_hash)
+        now = time.time()
+        if not record or record.get("expires", 0) <= now:
+            data["storage"].data.setdefault("qr_tokens", {}).pop(token_hash, None)
+            return _json_error("QR access is invalid or expired.", 401)
+        guest = data["storage"].data["guests"].get(record.get("guest_id"))
+        if not guest or not data["access_manager"].guest_is_active(guest, now):
+            return _json_error("Guest access has expired or been disabled.", 401)
+        guest["last_seen_at"] = int(now)
+        session_token = _new_session(request.app["hass"], data, guest["guest_id"])
+        data["access_manager"].append_audit(data, {
+            "guest_id": guest["guest_id"], "username": guest["username"],
+            "operation": "qr_login", "allowed": True,
+        })
+        await data["storage"].async_save()
+        return web.json_response({"status": "ok", "token": session_token})
+
+
+class GuestQrImageView(HomeAssistantView):
+    """Render QR images locally without sending access tokens to third parties."""
+    url = "/api/guest_portal/qr-image"
+    name = "api:guest_portal:qr_image"
+    requires_auth = True
+
+    async def post(self, request: web.Request) -> web.Response:
+        user = request.get("hass_user")
+        if not user or not user.is_admin:
+            return _json_error("Administrator access required.", 403)
+        data = _active_entry_data(request.app["hass"])
+        if data is None:
+            return _json_error("Guest Portal is not configured.", 503)
+        try:
+            body = await request.json()
+        except (ValueError, TypeError):
+            return _json_error("Invalid JSON.")
+        raw_token = str(body.get("access_token", ""))
+        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+        record = data["storage"].data.setdefault("qr_tokens", {}).get(token_hash)
+        if not raw_token or not record or record.get("expires", 0) <= time.time():
+            return _json_error("QR access is invalid or expired.", 404)
+        guest = data["storage"].data["guests"].get(record.get("guest_id"))
+        if not guest or not data["access_manager"].guest_is_active(guest):
+            return _json_error("Guest access is disabled or expired.", 403)
+        try:
+            import segno
+            qr = segno.make(body.get("url", ""), error="m")
+            output = io.BytesIO()
+            qr.save(output, kind="png", scale=8, border=3)
+        except (ImportError, ValueError, TypeError):
+            return _json_error("QR image generation is unavailable.", 503)
+        return web.Response(
+            body=output.getvalue(), content_type="image/png",
+            headers={"Cache-Control": "no-store"},
+        )
+
 class GuestAdminApiView(HomeAssistantView):
     """Administrator-only API for guest and approval management."""
 
@@ -351,6 +430,7 @@ class GuestAdminApiView(HomeAssistantView):
         data = _active_entry_data(request.app["hass"])
         if data is None:
             return _json_error("Guest Portal is not configured.", 503)
+        now = time.time()
         guests = [
             {
                 "guest_id": guest["guest_id"],
@@ -360,6 +440,9 @@ class GuestAdminApiView(HomeAssistantView):
                 "profile_id": guest.get("profile_id"),
                 "expires_at": guest.get("expires_at"),
                 "created_at": guest.get("created_at"),
+                "last_seen_at": guest.get("last_seen_at"),
+                "qr_active": any(item.get("guest_id") == guest["guest_id"] and item.get("expires", 0) > now for item in data["storage"].data.setdefault("qr_tokens", {}).values()),
+                "qr_expires_at": max((item.get("expires", 0) for item in data["storage"].data.setdefault("qr_tokens", {}).values() if item.get("guest_id") == guest["guest_id"]), default=None),
                 "read_entities": guest.get("read_entities", []),
                 "write_entities": guest.get("write_entities", []),
                 "alone_entities": guest.get("alone_entities", []),
@@ -367,7 +450,6 @@ class GuestAdminApiView(HomeAssistantView):
             }
             for guest in data["storage"].data["guests"].values()
         ]
-        now = time.time()
         pending = [
             {
                 "request_id": request_id,
@@ -455,6 +537,47 @@ class GuestAdminApiView(HomeAssistantView):
             })
             await data["storage"].async_save()
             return web.json_response({"status": "created"})
+        if action == "create_qr_token":
+            guest_id = str(body.get("guest_id", ""))
+            guest = data["storage"].data["guests"].get(guest_id)
+            if not guest or not data["access_manager"].guest_is_active(guest):
+                return _json_error("Guest not found, disabled or expired.", 404)
+            qr_tokens = data["storage"].data.setdefault("qr_tokens", {})
+            for digest, item in list(qr_tokens.items()):
+                if item.get("guest_id") == guest_id:
+                    qr_tokens.pop(digest, None)
+            raw_token = secrets.token_urlsafe(32)
+            token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+            expiry = int(time.time()) + 30 * 24 * 60 * 60
+            if guest.get("expires_at"):
+                expiry = min(expiry, int(guest["expires_at"]))
+            qr_tokens[token_hash] = {"guest_id": guest_id, "created": int(time.time()), "expires": expiry}
+            data["access_manager"].append_audit(data, {"guest_id": guest_id, "username": guest["username"], "operation": "create_qr_token", "allowed": True})
+            await data["storage"].async_save()
+            return web.json_response({"access_token": raw_token, "expires": expiry})
+        if action == "revoke_qr_token":
+            guest_id = str(body.get("guest_id", ""))
+            if guest_id not in data["storage"].data["guests"]:
+                return _json_error("Guest not found.", 404)
+            qr_tokens = data["storage"].data.setdefault("qr_tokens", {})
+            removed = 0
+            for digest, item in list(qr_tokens.items()):
+                if item.get("guest_id") == guest_id:
+                    qr_tokens.pop(digest, None)
+                    removed += 1
+            data["access_manager"].append_audit(data, {"guest_id": guest_id, "operation": "revoke_qr_token", "allowed": True, "count": removed})
+            await data["storage"].async_save()
+            return web.json_response({"status": "ok", "revoked": removed})
+        if action == "extend_guest_expiry":
+            guest_id = str(body.get("guest_id", ""))
+            guest = data["storage"].data["guests"].get(guest_id)
+            if not guest:
+                return _json_error("Guest not found.", 404)
+            new_expiry = int(time.time()) + 7 * 24 * 60 * 60
+            guest["expires_at"] = _clean_expiry(new_expiry)
+            data["access_manager"].append_audit(data, {"guest_id": guest_id, "operation": "extend_guest_7_days", "allowed": True})
+            await data["storage"].async_save()
+            return web.json_response({"status": "ok", "expires_at": new_expiry})
         if action == "update_guest":
             guest_id = str(body.get("guest_id", ""))
             guest = data["storage"].data["guests"].get(guest_id)
@@ -512,6 +635,9 @@ class GuestAdminApiView(HomeAssistantView):
                 guest["enabled"] = enabled
             if not enabled:
                 data["access_manager"].revoke_guest_sessions(data, guest_id)
+                for digest, item in list(data["storage"].data.setdefault("qr_tokens", {}).items()):
+                    if item.get("guest_id") == guest_id:
+                        data["storage"].data["qr_tokens"].pop(digest, None)
             data["access_manager"].append_audit(data, {
                 "guest_id": guest_id, "operation": action, "allowed": True,
             })
