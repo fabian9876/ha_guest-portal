@@ -1,53 +1,97 @@
 # HA Guest Portal
 
-A Home Assistant custom integration for a controlled guest portal. The project is in early development.
+A Home Assistant custom integration for a controlled guest portal. Version 0.2.0 adds guest accounts, authentication, server-side entity allowlists and an initial guest web page.
 
-## Current status — 0.1.0
+## Features in 0.2.0
 
-This first scaffold provides:
-
-- HACS-compatible custom integration structure
-- UI configuration for a Home Assistant zone and presence entities
-- Settings for an absence delay, optional notification service and default session duration
-- A service to manually toggle the alone-at-home mode:
-  - Service: `guest_portal.set_alone_mode`
-  - Data: `{"enabled": true}` or `{"enabled": false}`
-- An event when the mode changes: `guest_portal_alone_mode_changed`
-
-**Not implemented yet:** guest accounts, guest login, password storage, OTP, admin approval, entity permissions, guest-facing UI, automatic presence evaluation, and additional-device rules. Do not expose this scaffold as a guest login system.
+- HACS custom integration and Home Assistant config/options flow.
+- Guest accounts persisted in Home Assistant storage. Passwords are hashed with PBKDF2-HMAC-SHA256 (310,000 iterations); plaintext passwords are not stored.
+- Login with either administrator approval or a one-time six-digit code.
+- Short-lived bearer sessions; sessions are kept in memory and are revoked on logout, account disable/removal or integration reload.
+- Rate limiting of login attempts by client IP.
+- Server-side read and write allowlists. The browser cannot request arbitrary entity states or arbitrary Home Assistant services.
+- Extra read/write entities can be assigned to a guest and become available only while alone mode is active.
+- Optional automatic alone mode from configured person/device_tracker entities, with an absence delay. Unknown/unavailable presence fails closed.
+- Guest web page at \`/guest-portal\`.
 
 ## Installation via HACS
 
-1. Open HACS in Home Assistant.
-2. Open the three-dot menu and choose **Custom repositories**.
-3. Add `https://github.com/fabian9876/ha_guest-portal` as an **Integration**.
-4. Install **HA Guest Portal**.
-5. Restart Home Assistant.
-6. Add **HA Guest Portal** under Settings → Devices & services.
+1. Open HACS → Integrations → three-dot menu → Custom repositories.
+2. Add \`https://github.com/fabian9876/ha_guest-portal\` as an **Integration**.
+3. Install **HA Guest Portal**, restart Home Assistant and add the integration under Settings → Devices & services.
+4. Configure the home zone, monitored people/devices, authentication mode and notification service.
 
-## Manual installation
+## Managing guests
 
-Copy the `custom_components/guest_portal` directory into the `custom_components` directory of your Home Assistant configuration, then restart Home Assistant.
+Use Home Assistant's Developer Tools → Actions (older versions: Services). The management services require an authenticated Home Assistant administrator.
 
-## Planned roadmap
+### Create a guest
 
-- [x] 0.1.0 — Integration scaffold and configuration flow
-- [ ] 0.2.0 — Guest records and administrator management
-- [ ] 0.3.0 — Secure guest authentication, one-time codes and approval workflow
-- [ ] 0.4.0 — Server-side entity allowlists and guest dashboard
-- [ ] 0.5.0 — Automatic alone-at-home mode with configurable absence delay
-- [ ] 0.6.0 — Additional devices and permissions limited to alone mode
-- [ ] 1.0.0 — Tests, security review and stable release
+Action: \`guest_portal.add_guest\`
 
-## Security principles
+\`\`\`yaml
+username: Alex
+guest_id: alex
+password: "use-a-unique-password-at-least-12-chars"
+read_entities:
+  - light.living_room
+  - sensor.living_room_temperature
+write_entities:
+  - light.living_room
+alone_entities:
+  - switch.office_socket
+alone_write_entities:
+  - switch.office_socket
+\`\`\`
 
-- Never put a Home Assistant long-lived access token in browser code.
-- Enforce entity permissions on the server for every request; hiding UI controls is not authorization.
-- Store passwords using a modern password-hashing scheme, never reversible encryption or plaintext.
-- Use short-lived, revocable guest sessions and rate-limit authentication attempts.
-- Fail closed if presence state is unknown or unavailable.
-- Require HTTPS for remote access and avoid exposing Home Assistant directly to the public internet.
+The guest can always read \`read_entities\` and control only \`write_entities\`. The extra \`alone_entities\` and \`alone_write_entities\` are added only while alone mode is active. A guest ID may contain letters, numbers, underscore and hyphen.
 
-## Development
+### Approve a login
 
-The integration is intentionally limited to configuration and a manual mode service in this release. Authentication and guest entity access must be implemented and tested before real guests use the system.
+In approval mode, a login notification contains a request ID. Approve or reject it with:
+
+\`\`\`yaml
+action: guest_portal.approve_request
+data:
+  request_id: "REQUEST_ID_FROM_NOTIFICATION"
+  approved: true
+\`\`\`
+
+Set \`approved: false\` to reject. The request expires after 10 minutes.
+
+### Other management actions
+
+- \`guest_portal.remove_guest\`: \`guest_id\`
+- \`guest_portal.set_guest_enabled\`: \`guest_id\`, \`enabled\`
+- \`guest_portal.set_alone_mode\`: \`enabled\`
+
+Disabling/removing a guest revokes their active sessions.
+
+## Authentication modes
+
+- **Administrator approval:** correct password creates a pending request. An administrator must approve it in Home Assistant.
+- **One-time code:** correct password triggers a six-digit code through the configured Home Assistant notify service. The guest enters that code on the portal page. Configure a notification destination that the guest can actually receive, or use an administrator-controlled relay.
+
+The OTP is valid for five minutes. Approval requests expire after ten minutes. Sessions expire according to the configured duration.
+
+## Guest controls
+
+The portal page is available at \`/guest-portal\` on the same Home Assistant host. It shows only explicitly allowed entities. In this version the supported controls are on/off/toggle for light, switch and fan entities (and the restricted Home Assistant generic turn_on/turn_off/toggle services). Lock, alarm, cover, climate and arbitrary service calls are deliberately not exposed.
+
+## Security notes and limitations
+
+- Do not expose Home Assistant directly to the public internet. Use a trusted HTTPS reverse proxy or Home Assistant Cloud.
+- The portal does not implement its own TLS. HTTPS must be provided by the Home Assistant deployment.
+- The login API is unauthenticated by design; use HTTPS and network-level protections.
+- OTP delivery depends on the configured notify service being correctly targeted.
+- Guest sessions and pending approval/challenge state are in memory; a Home Assistant restart logs guests out and clears pending requests.
+- Guest management is currently performed through administrator-only Home Assistant actions, not a separate visual admin dashboard.
+- The integration has not yet been tested against your specific Home Assistant version or hardware. Review the code and test with non-critical entities before use.
+
+## Roadmap
+
+- [x] 0.1.0 — HACS scaffold and configuration flow
+- [x] 0.2.0 — Guest records, authentication, approvals/OTP and server-side allowlists
+- [ ] 0.3.0 — Visual administrator dashboard, audit log and stronger test coverage
+- [ ] 0.4.0 — Automated integration tests and security review
+- [ ] 1.0.0 — Stable release

@@ -1,4 +1,4 @@
-"""Constants for the HA Guest Portal integration."""
+"""Constants for HA Guest Portal."""
 
 DOMAIN = "guest_portal"
 
@@ -7,11 +7,18 @@ CONF_PRESENCE_ENTITIES = "presence_entities"
 CONF_ABSENCE_DELAY = "absence_delay"
 CONF_NOTIFY_SERVICE = "notify_service"
 CONF_SESSION_MINUTES = "session_minutes"
+CONF_AUTH_MODE = "auth_mode"
+CONF_AUTO_ALONE_MODE = "auto_alone_mode"
 
 DEFAULT_ABSENCE_DELAY = 5
 DEFAULT_SESSION_MINUTES = 480
 
 SERVICE_SET_ALONE_MODE = "set_alone_mode"
-ATTR_ENABLED = "enabled"
+SERVICE_ADD_GUEST = "add_guest"
+SERVICE_REMOVE_GUEST = "remove_guest"
+SERVICE_SET_GUEST_ENABLED = "set_guest_enabled"
+SERVICE_APPROVE_REQUEST = "approve_request"
 
+ATTR_ENABLED = "enabled"
 EVENT_ALONE_MODE_CHANGED = "guest_portal_alone_mode_changed"
+EVENT_GUEST_REQUEST = "guest_portal_login_requested"

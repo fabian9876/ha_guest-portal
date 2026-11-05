@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gastportal</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,sans-serif}body{max-width:760px;margin:3rem auto;padding:0 1rem}
+main{border:1px solid #8886;border-radius:14px;padding:1.2rem}label{display:block;margin:.8rem 0 .3rem}
+input,button{font:inherit;padding:.7rem;border-radius:8px;border:1px solid #888;width:100%;box-sizing:border-box}
+button{cursor:pointer;margin-top:.7rem}article{padding:.8rem;margin:.6rem 0;border:1px solid #8886;border-radius:9px}
+small{opacity:.75}#message{min-height:1.5rem}.hidden{display:none}
+</style>
+</head>
+<body>
+<main>
+<h1>Gastportal</h1>
+<p id="message" role="status">Bitte anmelden.</p>
+<section id="login">
+<label for="username">Name</label><input id="username" autocomplete="username" maxlength="64">
+<label for="password">Passwort</label><input id="password" type="password" autocomplete="current-password">
+<button id="loginButton">Anmelden</button>
+<div id="otpBox" class="hidden"><label for="otp">Einmalcode</label><input id="otp" inputmode="numeric" maxlength="6"><button id="otpButton">Code bestätigen</button></div>
+</section>
+<section id="portal" class="hidden"><h2>Freigegebene Geräte</h2><p id="mode"></p><div id="entities"></div><button id="logout">Abmelden</button></section>
+</main>
+<script>
+(() => {
+  const base="/api/guest_portal";
+  let token=sessionStorage.getItem("guest_portal_token");
+  let challenge=null, approval=null, poll=null;
+  const $=id=>document.getElementById(id);
+  const message=t=>$("message").textContent=t;
+  const api=async(path,options={})=>{
+    const headers={"Content-Type":"application/json",...(token?{Authorization:"Bearer "+token}:{}),...(options.headers||{})};
+    const response=await fetch(base+path,{...options,headers});
+    const body=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(body.error||"Anfrage fehlgeschlagen");
+    return body;
+  };
+  const showPortal=async()=>{
+    $("login").classList.add("hidden");$("portal").classList.remove("hidden");
+    const data=await api("/states");
+    $("mode").textContent=data.alone_mode?"Allein-zu-Hause-Modus aktiv":"Normaler Gastzugriff";
+    $("entities").replaceChildren();
+    for(const entity of data.entities){
+      const card=document.createElement("article");
+      const title=document.createElement("strong");title.textContent=entity.name;
+      const state=document.createElement("p");state.textContent=entity.state+(entity.unit?" "+entity.unit:"");
+      card.append(title,state);
+      if(entity.can_control){
+        for(const [label,service] of [["Ein","turn_on"],["Aus","turn_off"]]){
+          const button=document.createElement("button");button.textContent=label;
+          button.addEventListener("click",async()=>{try{await api("/control",{method:"POST",body:JSON.stringify({entity_id:entity.entity_id,service})});await showPortal()}catch(e){message(e.message)}});
+          card.append(button);
+        }
+      }
+      $("entities").append(card);
+    }
+  };
+  const beginPoll=()=>{
+    clearInterval(poll);let count=0;
+    poll=setInterval(async()=>{
+      if(++count>120){clearInterval(poll);message("Freigabe abgelaufen. Bitte erneut anmelden.");return}
+      try{
+        const result=await api("/approval/"+encodeURIComponent(approval));
+        if(result.status==="approved"){clearInterval(poll);token=result.token;sessionStorage.setItem("guest_portal_token",token);message("Freigegeben.");await showPortal()}
+        else if(result.status==="rejected"){clearInterval(poll);message("Anmeldung wurde abgelehnt.")}
+      }catch(e){clearInterval(poll);message(e.message)}
+    },3000);
+  };
+  $("loginButton").addEventListener("click",async()=>{
+    try{
+      const result=await api("/login",{method:"POST",body:JSON.stringify({username:$("username").value,password:$("password").value})});
+      if(result.status==="otp_required"){challenge=result.challenge_id;$("otpBox").classList.remove("hidden");message("Einmalcode wurde versendet.")}
+      else if(result.status==="approval_required"){approval=result.request_id;message("Warte auf Freigabe durch den Administrator.");beginPoll()}
+    }catch(e){message(e.message)}
+  });
+  $("otpButton").addEventListener("click",async()=>{
+    try{const result=await api("/login",{method:"POST",body:JSON.stringify({challenge_id:challenge,otp:$("otp").value})});token=result.token;sessionStorage.setItem("guest_portal_token",token);await showPortal()}
+    catch(e){message(e.message)}
+  });
+  $("logout").addEventListener("click",async()=>{
+    try{await api("/logout",{method:"POST"})}catch(e){}
+    token=null;sessionStorage.removeItem("guest_portal_token");$("portal").classList.add("hidden");$("login").classList.remove("hidden");message("Abgemeldet.");
+  });
+  if(token)showPortal().catch(()=>{token=null;sessionStorage.removeItem("guest_portal_token")});
+})();
+</script>
+</body>
+</html>
