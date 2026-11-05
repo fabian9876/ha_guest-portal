@@ -39,6 +39,7 @@ from .const import (
     SERVICE_SET_ALONE_MODE,
     SERVICE_SET_GUEST_ENABLED,
 )
+from .access_manager import GuestAccessManager
 from .panel import async_register_panels
 from .storage import GuestStorage
 
@@ -215,6 +216,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     data = {
         "entry": entry,
         "storage": storage,
+        "access_manager": GuestAccessManager(hass),
         "alone_mode": False,
         "sessions": {},
         "pending": {},
