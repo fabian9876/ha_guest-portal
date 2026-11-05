@@ -3,13 +3,15 @@
     "step": {
       "user": {
         "title": "HA Guest Portal",
-        "description": "Configure presence monitoring and guest session defaults.",
+        "description": "Configure presence monitoring, login mode and guest session defaults.",
         "data": {
           "presence_zone": "Home zone",
           "presence_entities": "People and device trackers to monitor",
           "absence_delay": "Minutes everyone must be away",
-          "notify_service": "Notification service (optional)",
-          "session_minutes": "Default guest session duration in minutes"
+          "notify_service": "Notification service",
+          "session_minutes": "Guest session duration in minutes",
+          "auth_mode": "Guest authentication mode",
+          "auto_alone_mode": "Automatically activate alone mode from presence"
         }
       }
     },
@@ -25,8 +27,10 @@
           "presence_zone": "Home zone",
           "presence_entities": "People and device trackers to monitor",
           "absence_delay": "Minutes everyone must be away",
-          "notify_service": "Notification service (optional)",
-          "session_minutes": "Default guest session duration in minutes"
+          "notify_service": "Notification service",
+          "session_minutes": "Guest session duration in minutes",
+          "auth_mode": "Guest authentication mode",
+          "auto_alone_mode": "Automatically activate alone mode from presence"
         }
       }
     }

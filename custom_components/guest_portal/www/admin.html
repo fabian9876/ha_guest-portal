@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gastportal – Administration</title>
+<style>
+body{font:16px system-ui,sans-serif;max-width:1000px;margin:2rem auto;padding:0 1rem}
+section{border:1px solid #8886;border-radius:12px;padding:1rem;margin:1rem 0}
+label{display:block;margin:.7rem 0 .25rem}input,select,button{font:inherit;padding:.6rem;border:1px solid #8888;border-radius:7px;max-width:100%;box-sizing:border-box}
+input,select{width:100%}select[multiple]{height:9rem}button{cursor:pointer;margin:.3rem .3rem .3rem 0}
+.guest,.pending{padding:.8rem;border:1px solid #8886;border-radius:8px;margin:.5rem 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+#message{min-height:1.5rem}
+</style></head><body>
+<h1>Gastportal – Administration</h1><p id="message">Lade Daten …</p>
+<section><h2>Allein-zu-Hause-Modus</h2><p id="mode"></p><button id="modeToggle">Modus umschalten</button></section>
+<section><h2>Anfragen</h2><div id="pending"></div></section>
+<section><h2>Gast anlegen</h2>
+<form id="create">
+<div class="grid">
+<div><label>Name</label><input id="username" required maxlength="64"></div>
+<div><label>Gast-ID (optional)</label><input id="guest_id" maxlength="64"></div>
+<div><label>Passwort (mindestens 12 Zeichen)</label><input id="password" type="password" minlength="12" required></div>
+</div>
+<div class="grid">
+<div><label>Lesbare Geräte</label><select id="read_entities" multiple></select></div>
+<div><label>Steuerbare Geräte</label><select id="write_entities" multiple></select></div>
+<div><label>Zusätzliche Geräte im Allein-Modus (lesen)</label><select id="alone_entities" multiple></select></div>
+<div><label>Zusätzliche Geräte im Allein-Modus (steuern)</label><select id="alone_write_entities" multiple></select></div>
+</div><button id="submitButton" type="submit">Gast speichern</button><button type="button" id="cancelEdit">Abbrechen</button></form>
+</section>
+<section><h2>Gäste</h2><div id="guests"></div></section>
+<script>
+(() => {
+const $=id=>document.getElementById(id), api="/api/guest_portal/admin";
+const msg=t=>$("message").textContent=t;
+const post=async body=>{const r=await fetch(api,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Fehler");return d};
+const selected=id=>Array.from($(id).selectedOptions).map(o=>o.value);
+const button=(label,fn)=>{const b=document.createElement("button");b.textContent=label;b.addEventListener("click",fn);return b};
+let alone=false, editingId=null;
+async function load(){
+ try{
+ const r=await fetch(api);const d=await r.json();if(!r.ok)throw new Error(d.error||"Kein Zugriff");
+ alone=d.alone_mode;$("mode").textContent=alone?"Aktiv":"Inaktiv";$("modeToggle").textContent=alone?"Deaktivieren":"Aktivieren";
+ for(const id of ["read_entities","write_entities","alone_entities","alone_write_entities"]){
+ const s=$(id);s.replaceChildren();for(const entity of d.entities){const o=document.createElement("option");o.value=entity;o.textContent=entity;s.append(o)}
+ }
+ $("pending").replaceChildren();
+ if(!d.pending.length){$("pending").textContent="Keine offenen Anfragen."}
+ for(const item of d.pending){const el=document.createElement("div");el.className="pending";const text=document.createElement("span");text.textContent=item.username+" – Anfrage "+item.request_id;el.append(text);
+ el.append(button("Freigeben",async()=>{try{await post({action:"approve_request",request_id:item.request_id,approved:true});await load()}catch(e){msg(e.message)}}));
+ el.append(button("Ablehnen",async()=>{try{await post({action:"approve_request",request_id:item.request_id,approved:false});await load()}catch(e){msg(e.message)}}));$("pending").append(el)}
+ $("guests").replaceChildren();
+ if(!d.guests.length){$("guests").textContent="Noch keine Gäste angelegt."}
+ for(const guest of d.guests){const el=document.createElement("div");el.className="guest";const title=document.createElement("strong");title.textContent=guest.username+" ("+guest.guest_id+") – "+(guest.enabled?"aktiv":"deaktiviert");el.append(title);
+ const detail=document.createElement("p");detail.textContent="Lesen: "+guest.read_entities.length+" · Steuern: "+guest.write_entities.length+" · Allein-Modus extra: "+guest.alone_entities.length+" / "+guest.alone_write_entities.length;el.append(detail);
+ el.append(button("Bearbeiten",()=>{editingId=guest.guest_id;$("username").value=guest.username;$("guest_id").value=guest.guest_id;$("password").value="";
+ for(const id of ["read_entities","write_entities","alone_entities","alone_write_entities"]){const allowed=guest[id];for(const option of $(id).options)option.selected=allowed.includes(option.value)}
+ $("password").required=false;$("submitButton").textContent="Änderungen speichern";msg("Bearbeite "+guest.username)}));
+ el.append(button(guest.enabled?"Deaktivieren":"Aktivieren",async()=>{try{await post({action:"set_guest_enabled",guest_id:guest.guest_id,enabled:!guest.enabled});await load()}catch(e){msg(e.message)}}));
+ el.append(button("Löschen",async()=>{if(!confirm("Gast "+guest.username+" löschen?"))return;try{await post({action:"remove_guest",guest_id:guest.guest_id});await load()}catch(e){msg(e.message)}}));$("guests").append(el)}
+ msg("Verwaltung geladen.");
+ }catch(e){msg(e.message)}
+}
+$("create").addEventListener("submit",async e=>{e.preventDefault();try{
+ const payload={username:$("username").value,guest_id:$("guest_id").value,password:$("password").value,
+ read_entities:selected("read_entities"),write_entities:selected("write_entities"),alone_entities:selected("alone_entities"),alone_write_entities:selected("alone_write_entities")};
+ if(editingId){payload.action="update_guest";payload.guest_id=editingId;await post(payload);msg("Gast wurde aktualisiert.")}
+ else{payload.action="add_guest";await post({...payload,action:"add_guest"});msg("Gast wurde angelegt.")}
+ editingId=null;$("create").reset();$("password").required=true;$("submitButton").textContent="Gast speichern";await load()
+}catch(err){msg(err.message)}});
+$("cancelEdit").addEventListener("click",()=>{editingId=null;$("create").reset();$("password").required=true;$("submitButton").textContent="Gast speichern";msg("Bearbeitung abgebrochen.")});
+$("modeToggle").addEventListener("click",async()=>{try{await post({action:"set_alone_mode",enabled:!alone});await load()}catch(e){msg(e.message)}});
+load();
+})();
+</script></body></html>
