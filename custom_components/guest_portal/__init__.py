@@ -9,8 +9,8 @@ from __future__ import annotations
 import logging
 
 import voluptuous as vol
-from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant, ServiceCall
 
 from .const import (
     ATTR_ENABLED,
@@ -24,35 +24,38 @@ PLATFORMS: list[str] = []
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Set up the integration domain."""
-    hass.data.setdefault(DOMAIN, {"entries": {}})
+    """Set up the integration domain and its domain-level service."""
+    domain_data = hass.data.setdefault(DOMAIN, {"entries": {}})
+
+    async def async_set_alone_mode(call: ServiceCall) -> None:
+        """Manually enable or disable alone mode for the active entry."""
+        entries = domain_data["entries"]
+        if not entries:
+            _LOGGER.warning("Cannot change alone mode: no config entry is loaded")
+            return
+
+        enabled = call.data[ATTR_ENABLED]
+        for entry_id, entry_data in entries.items():
+            entry_data["alone_mode"] = enabled
+            hass.bus.async_fire(
+                EVENT_ALONE_MODE_CHANGED,
+                {"entry_id": entry_id, "enabled": enabled, "source": "service"},
+            )
+        _LOGGER.info("Alone mode %s", "enabled" if enabled else "disabled")
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SET_ALONE_MODE,
+        async_set_alone_mode,
+        schema=vol.Schema({vol.Required(ATTR_ENABLED): bool}),
+    )
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up a configured entry."""
     domain_data = hass.data.setdefault(DOMAIN, {"entries": {}})
-    entry_data = {"alone_mode": False}
-    domain_data["entries"][entry.entry_id] = entry_data
-
-    async def async_set_alone_mode(call: ServiceCall) -> None:
-        """Manually enable or disable alone mode."""
-        enabled = call.data[ATTR_ENABLED]
-        entry_data["alone_mode"] = enabled
-        hass.bus.async_fire(
-            EVENT_ALONE_MODE_CHANGED,
-            {"entry_id": entry.entry_id, "enabled": enabled, "source": "service"},
-        )
-        _LOGGER.info("Alone mode %s", "enabled" if enabled else "disabled")
-
-    if not hass.services.has_service(DOMAIN, SERVICE_SET_ALONE_MODE):
-        hass.services.async_register(
-            DOMAIN,
-            SERVICE_SET_ALONE_MODE,
-            async_set_alone_mode,
-            schema=vol.Schema({vol.Required(ATTR_ENABLED): bool}),
-        )
-
+    domain_data["entries"][entry.entry_id] = {"alone_mode": False}
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     return True
 
