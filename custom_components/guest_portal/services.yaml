@@ -79,3 +79,16 @@ approve_request:
       required: true
       selector:
         boolean:
+
+revoke_guest_sessions:
+  name: Revoke guest sessions
+  description: End every active session belonging to one guest. Requires an administrator.
+  fields:
+    guest_id:
+      required: true
+      selector:
+        text:
+
+revoke_all_sessions:
+  name: Revoke all guest sessions
+  description: Emergency action that ends every active Guest Portal session. Requires an administrator.
