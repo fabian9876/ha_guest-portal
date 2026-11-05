@@ -93,7 +93,7 @@ class GuestLoginView(HomeAssistantView):
     requires_auth = False
 
     async def post(self, request: web.Request) -> web.Response:
-        data = _active_entry_data(self.hass)
+        data = _active_entry_data(request.app["hass"])
         if data is None:
             return _json_error("Guest Portal is not configured.", 503)
         if not _rate_allowed(data, request.remote or "unknown"):
@@ -113,7 +113,7 @@ class GuestLoginView(HomeAssistantView):
             if not hmac.compare_digest(otp_hash, challenge["otp_hash"]):
                 return _json_error("Code expired or invalid.", 401)
             data["challenges"].pop(challenge_id, None)
-            token = _new_session(self.hass, data, challenge["guest_id"])
+            token = _new_session(request.app["hass"], data, challenge["guest_id"])
             return web.json_response({"status": "ok", "token": token})
 
         username = str(body.get("username", "")).strip()
@@ -148,7 +148,7 @@ class GuestLoginView(HomeAssistantView):
                 data["entry"].data.get(CONF_NOTIFY_SERVICE, ""),
             )
             _notify(
-                self.hass, service, "HA Guest Portal – Einmalcode",
+                request.app["hass"], service, "HA Guest Portal – Einmalcode",
                 f"Einmalcode für Gast {guest['username']}: {code}. "
                 "Der Code ist 5 Minuten gültig.",
             )
@@ -166,7 +166,7 @@ class GuestLoginView(HomeAssistantView):
             CONF_NOTIFY_SERVICE, data["entry"].data.get(CONF_NOTIFY_SERVICE, "")
         )
         _notify(
-            self.hass, service, "HA Guest Portal – Freigabe erforderlich",
+            request.app["hass"], service, "HA Guest Portal – Freigabe erforderlich",
             f"Anmeldeversuch von {guest['username']}. "
             f"Freigabe über den Home-Assistant-Dienst "
             f"guest_portal.approve_request mit request_id: {request_id}. "
@@ -196,7 +196,7 @@ class GuestApprovalView(HomeAssistantView):
     requires_auth = False
 
     async def get(self, request: web.Request, request_id: str) -> web.Response:
-        data = _active_entry_data(self.hass)
+        data = _active_entry_data(request.app["hass"])
         if data is None:
             return _json_error("Guest Portal is not configured.", 503)
         pending = data["pending"].get(request_id)
@@ -223,7 +223,7 @@ class GuestLogoutView(HomeAssistantView):
     requires_auth = False
 
     async def post(self, request: web.Request) -> web.Response:
-        data = _active_entry_data(self.hass)
+        data = _active_entry_data(request.app["hass"])
         if data is None:
             return _json_error("Guest Portal is not configured.", 503)
         session = _get_session(request, data)
@@ -240,7 +240,7 @@ class GuestStatesView(HomeAssistantView):
     requires_auth = False
 
     async def get(self, request: web.Request) -> web.Response:
-        data = _active_entry_data(self.hass)
+        data = _active_entry_data(request.app["hass"])
         if data is None:
             return _json_error("Guest Portal is not configured.", 503)
         session = _get_session(request, data)
@@ -251,7 +251,7 @@ class GuestStatesView(HomeAssistantView):
         readable, writable = _active_entity_lists(guest, alone)
         states = []
         for entity_id in sorted(readable):
-            state = self.hass.states.get(entity_id)
+            state = request.app["hass"].states.get(entity_id)
             if state is None:
                 continue
             states.append({
@@ -272,7 +272,7 @@ class GuestControlView(HomeAssistantView):
     requires_auth = False
 
     async def post(self, request: web.Request) -> web.Response:
-        data = _active_entry_data(self.hass)
+        data = _active_entry_data(request.app["hass"])
         if data is None:
             return _json_error("Guest Portal is not configured.", 503)
         session = _get_session(request, data)
@@ -293,7 +293,7 @@ class GuestControlView(HomeAssistantView):
         if domain not in allowed_domains or service not in {"turn_on", "turn_off", "toggle"}:
             return _json_error("This action is not permitted.", 403)
         try:
-            await self.hass.services.async_call(
+            await request.app["hass"].services.async_call(
                 domain, service, {"entity_id": entity_id}, blocking=True
             )
         except Exception:  # noqa: BLE001
@@ -310,7 +310,9 @@ class GuestPortalPageView(HomeAssistantView):
 
     async def get(self, request: web.Request) -> web.Response:
         page = Path(__file__).parent / "www" / "index.html"
-        return web.Response(text=page.read_text(encoding="utf-8"), content_type="text/html")
+        hass = request.app["hass"]
+        content = await hass.async_add_executor_job(lambda: page.read_text(encoding="utf-8"))
+        return web.Response(text=content, content_type="text/html")
 
 
 class GuestAdminApiView(HomeAssistantView):
@@ -328,7 +330,7 @@ class GuestAdminApiView(HomeAssistantView):
     async def get(self, request: web.Request) -> web.Response:
         if not self._is_admin(request):
             return _json_error("Administrator access required.", 403)
-        data = _active_entry_data(self.hass)
+        data = _active_entry_data(request.app["hass"])
         if data is None:
             return _json_error("Guest Portal is not configured.", 503)
         guests = [
@@ -356,14 +358,14 @@ class GuestAdminApiView(HomeAssistantView):
         return web.json_response({
             "guests": guests,
             "pending": pending,
-            "entities": sorted(state.entity_id for state in self.hass.states.async_all()),
+            "entities": sorted(state.entity_id for state in request.app["hass"].states.async_all()),
             "alone_mode": data["alone_mode"],
         })
 
     async def post(self, request: web.Request) -> web.Response:
         if not self._is_admin(request):
             return _json_error("Administrator access required.", 403)
-        data = _active_entry_data(self.hass)
+        data = _active_entry_data(request.app["hass"])
         if data is None:
             return _json_error("Guest Portal is not configured.", 503)
         try:
@@ -441,7 +443,7 @@ class GuestAdminApiView(HomeAssistantView):
         if action == "set_alone_mode":
             enabled = bool(body.get("enabled"))
             data["alone_mode"] = enabled
-            self.hass.bus.async_fire("guest_portal_alone_mode_changed", {
+            request.app["hass"].bus.async_fire("guest_portal_alone_mode_changed", {
                 "entry_id": data["entry"].entry_id, "enabled": enabled, "source": "admin_dashboard"
             })
             return web.json_response({"status": "ok", "alone_mode": enabled})
@@ -452,7 +454,7 @@ class GuestAdminApiView(HomeAssistantView):
                 return _json_error("Approval request expired.", 404)
             if body.get("approved") is True:
                 pending["status"] = "approved"
-                pending["session_token"] = _new_session(self.hass, data, pending["guest_id"])
+                pending["session_token"] = _new_session(request.app["hass"], data, pending["guest_id"])
             else:
                 pending["status"] = "rejected"
             return web.json_response({"status": pending["status"]})
