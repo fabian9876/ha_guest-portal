@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import secrets
 import time
@@ -121,7 +122,7 @@ class GuestAccessManager:
                 data["sessions"].pop(token, None)
                 continue
             result.append({
-                "session_id": secrets.token_hex(6) if False else __import__("hashlib").sha256(token.encode()).hexdigest()[:12],
+                "session_id": hashlib.sha256(token.encode()).hexdigest()[:12],
                 "guest_id": session["guest_id"],
                 "username": guest.get("username", "unknown"),
                 "created": int(session.get("created", now)),
