@@ -1,81 +1,53 @@
 <!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Gastportal – Administration</title>
+<title>Gastportal – Verwaltung</title>
 <style>
-body{font:16px system-ui,sans-serif;max-width:1000px;margin:2rem auto;padding:0 1rem}
-section{border:1px solid #8886;border-radius:12px;padding:1rem;margin:1rem 0}
-label{display:block;margin:.7rem 0 .25rem}input,select,button{font:inherit;padding:.6rem;border:1px solid #8888;border-radius:7px;max-width:100%;box-sizing:border-box}
-input,select{width:100%}select[multiple]{height:9rem}button{cursor:pointer;margin:.3rem .3rem .3rem 0}
-.guest,.pending{padding:.8rem;border:1px solid #8886;border-radius:8px;margin:.5rem 0}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
-#message{min-height:1.5rem}
-</style></head><body>
-<h1>Gastportal – Administration</h1><p id="message">Lade Daten …</p>
-<section><h2>Allein-zu-Hause-Modus</h2><p id="mode"></p><button id="modeToggle">Modus umschalten</button></section>
-<section><h2>Anfragen</h2><div id="pending"></div></section>
-<section><h2>Gast anlegen</h2>
-<form id="create">
-<div class="grid">
-<div><label>Name</label><input id="username" required maxlength="64"></div>
-<div><label>Gast-ID (optional)</label><input id="guest_id" maxlength="64"></div>
-<div><label>Passwort (mindestens 12 Zeichen)</label><input id="password" type="password" minlength="12" required></div>
+:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,sans-serif;background:#101827;color:#edf2f7;--panel:#1a2638;--line:#304057;--muted:#a9b7ca;--accent:#78a9ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 12% 0%,#243b5b 0,transparent 40%),#101827;min-height:100vh}
+.wrap{max-width:1200px;margin:auto;padding:clamp(16px,3vw,36px)}header{margin-bottom:24px}h1{font-size:clamp(1.6rem,4vw,2.2rem);margin:0}h2{font-size:1.15rem;margin:0 0 15px}.muted{color:var(--muted)}.panel{background:#172337ed;border:1px solid var(--line);border-radius:18px;padding:20px;margin:15px 0}
+button,input{font:inherit;border-radius:10px;padding:10px 12px}button{background:#284b78;color:#fff;border:1px solid #47658c;cursor:pointer;font-weight:650}button.secondary{background:transparent;border-color:var(--line)}button.danger{background:#512e3b;border-color:#754456}input{background:#101a2a;color:#fff;border:1px solid var(--line);width:100%}label{display:block;color:var(--muted);font-size:.88rem;margin:12px 0 6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.device-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,390px),1fr));gap:14px}.group{border:1px solid var(--line);border-radius:14px;padding:14px;background:#121e30}.group h3{font-size:.98rem;margin:0 0 8px}.group p{font-size:.82rem;color:var(--muted);margin:0 0 10px}.search{margin:8px 0 10px}
+.entity-list{max-height:250px;overflow:auto;display:grid;gap:5px}.entity-option{display:flex;gap:10px;align-items:center;padding:8px;border-radius:8px;background:#1b2b40;color:#e4edf9;font-size:.88rem;cursor:pointer}.entity-option input{width:17px;height:17px;accent-color:#78a9ff;flex:none}.entity-option small{display:block;color:var(--muted);overflow-wrap:anywhere}.guest,.pending{border:1px solid var(--line);border-radius:13px;padding:14px;margin:10px 0;background:#142136}.guest-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.actions button{font-size:.88rem}.badge{border-radius:99px;padding:4px 9px;background:#263b56;font-size:.78rem}.hidden{display:none!important}#message{min-height:22px;color:#c9d9ed}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.toolbar>*{flex:0 0 auto}.toolbar .grow{flex:1}#guestForm{margin-top:15px}.form-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+@media(max-width:520px){.panel{padding:15px}.wrap{padding:14px}}
+</style></head><body><div class="wrap">
+<header><h1>Gastportal verwalten</h1><p class="muted">Gäste, Gerätefreigaben und Anmeldungen zentral verwalten.</p><p id="message" role="status">Warte auf Anmeldung als Home-Assistant-Administrator.</p></header>
+<section class="panel"><div class="toolbar"><div><h2 style="margin:0">Allein-zu-Hause-Modus</h2><span id="mode" class="muted">–</span></div><span class="grow"></span><button id="modeToggle">Modus umschalten</button></div></section>
+<section class="panel"><h2>Offene Anfragen</h2><div id="pending"></div></section>
+<section class="panel"><div class="toolbar"><h2 style="margin:0">Gäste</h2><span class="grow"></span><button id="newGuest">+ Gast anlegen</button></div><div id="guests"></div></section>
+<section id="editor" class="panel hidden"><div class="toolbar"><h2 id="editorTitle" style="margin:0">Gast anlegen</h2><span class="grow"></span><button type="button" class="secondary" id="closeEditor">Schließen</button></div>
+<form id="guestForm"><div class="grid">
+<div><label for="username">Anzeigename / Benutzername</label><input id="username" required maxlength="64"></div>
+<div><label for="guest_id">Gast-ID</label><input id="guest_id" maxlength="64" required></div>
+<div><label for="password">Passwort <span id="passwordHint">(mindestens 12 Zeichen)</span></label><input id="password" type="password" minlength="12" autocomplete="new-password"></div>
 </div>
-<div class="grid">
-<div><label>Lesbare Geräte</label><select id="read_entities" multiple></select></div>
-<div><label>Steuerbare Geräte</label><select id="write_entities" multiple></select></div>
-<div><label>Zusätzliche Geräte im Allein-Modus (lesen)</label><select id="alone_entities" multiple></select></div>
-<div><label>Zusätzliche Geräte im Allein-Modus (steuern)</label><select id="alone_write_entities" multiple></select></div>
-</div><button id="submitButton" type="submit">Gast speichern</button><button type="button" id="cancelEdit">Abbrechen</button></form>
-</section>
-<section><h2>Gäste</h2><div id="guests"></div></section>
+<h2 style="margin-top:24px">Gerätefreigaben</h2><p class="muted">Suche ein Gerät und setze den Haken, um es diesem Gast freizugeben. Die vier Bereiche werden getrennt gespeichert.</p>
+<div id="deviceGroups" class="device-groups"></div>
+<div class="form-actions"><button id="saveGuest" type="submit">Gast speichern</button><button type="button" class="secondary" id="cancelEdit">Abbrechen</button></div></form></section>
+</div>
 <script>
 (() => {
-const $=id=>document.getElementById(id), api="/api/guest_portal/admin";
-const msg=t=>$("message").textContent=t;
-let accessToken=null;
-const authHeaders=()=>accessToken?{Authorization:"Bearer "+accessToken}:{};
-const post=async body=>{const r=await fetch(api,{method:"POST",headers:{"Content-Type":"application/json",...authHeaders()},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Fehler");return d};
-const selected=id=>Array.from($(id).selectedOptions).map(o=>o.value);
-const button=(label,fn)=>{const b=document.createElement("button");b.textContent=label;b.addEventListener("click",fn);return b};
-let alone=false, editingId=null;
-async function load(){
- try{
- const r=await fetch(api,{headers:authHeaders()});const d=await r.json();if(!r.ok)throw new Error(d.error||"Kein Zugriff");
- alone=d.alone_mode;$("mode").textContent=alone?"Aktiv":"Inaktiv";$("modeToggle").textContent=alone?"Deaktivieren":"Aktivieren";
- for(const id of ["read_entities","write_entities","alone_entities","alone_write_entities"]){
- const s=$(id);s.replaceChildren();for(const entity of d.entities){const o=document.createElement("option");o.value=entity;o.textContent=entity;s.append(o)}
- }
- $("pending").replaceChildren();
- if(!d.pending.length){$("pending").textContent="Keine offenen Anfragen."}
- for(const item of d.pending){const el=document.createElement("div");el.className="pending";const text=document.createElement("span");text.textContent=item.username+" – Anfrage "+item.request_id;el.append(text);
- el.append(button("Freigeben",async()=>{try{await post({action:"approve_request",request_id:item.request_id,approved:true});await load()}catch(e){msg(e.message)}}));
- el.append(button("Ablehnen",async()=>{try{await post({action:"approve_request",request_id:item.request_id,approved:false});await load()}catch(e){msg(e.message)}}));$("pending").append(el)}
- $("guests").replaceChildren();
- if(!d.guests.length){$("guests").textContent="Noch keine Gäste angelegt."}
- for(const guest of d.guests){const el=document.createElement("div");el.className="guest";const title=document.createElement("strong");title.textContent=guest.username+" ("+guest.guest_id+") – "+(guest.enabled?"aktiv":"deaktiviert");el.append(title);
- const detail=document.createElement("p");detail.textContent="Lesen: "+guest.read_entities.length+" · Steuern: "+guest.write_entities.length+" · Allein-Modus extra: "+guest.alone_entities.length+" / "+guest.alone_write_entities.length;el.append(detail);
- el.append(button("Bearbeiten",()=>{editingId=guest.guest_id;$("username").value=guest.username;$("guest_id").value=guest.guest_id;$("password").value="";
- for(const id of ["read_entities","write_entities","alone_entities","alone_write_entities"]){const allowed=guest[id];for(const option of $(id).options)option.selected=allowed.includes(option.value)}
- $("password").required=false;$("submitButton").textContent="Änderungen speichern";msg("Bearbeite "+guest.username)}));
- el.append(button(guest.enabled?"Deaktivieren":"Aktivieren",async()=>{try{await post({action:"set_guest_enabled",guest_id:guest.guest_id,enabled:!guest.enabled});await load()}catch(e){msg(e.message)}}));
- el.append(button("Löschen",async()=>{if(!confirm("Gast "+guest.username+" löschen?"))return;try{await post({action:"remove_guest",guest_id:guest.guest_id});await load()}catch(e){msg(e.message)}}));$("guests").append(el)}
- msg("Verwaltung geladen.");
- }catch(e){msg(e.message)}
-}
-$("create").addEventListener("submit",async e=>{e.preventDefault();try{
- const payload={username:$("username").value,guest_id:$("guest_id").value,password:$("password").value,
- read_entities:selected("read_entities"),write_entities:selected("write_entities"),alone_entities:selected("alone_entities"),alone_write_entities:selected("alone_write_entities")};
- if(editingId){payload.action="update_guest";payload.guest_id=editingId;await post(payload);msg("Gast wurde aktualisiert.")}
- else{payload.action="add_guest";await post({...payload,action:"add_guest"});msg("Gast wurde angelegt.")}
- editingId=null;$("create").reset();$("password").required=true;$("submitButton").textContent="Gast speichern";await load()
-}catch(err){msg(err.message)}});
-$("cancelEdit").addEventListener("click",()=>{editingId=null;$("create").reset();$("password").required=true;$("submitButton").textContent="Gast speichern";msg("Bearbeitung abgebrochen.")});
+const $=id=>document.getElementById(id),api="/api/guest_portal/admin";let accessToken=null,alone=false,editingId=null,catalog=[],guestCache=[];
+const msg=t=>$("message").textContent=t,authHeaders=()=>accessToken?{Authorization:"Bearer "+accessToken}:{};
+const request=async(method="GET",body=null)=>{const opts={method,headers:authHeaders()};if(body){opts.headers={"Content-Type":"application/json",...authHeaders()};opts.body=JSON.stringify(body)}const r=await fetch(api,opts);const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Anfrage fehlgeschlagen");return d};
+const post=body=>request("POST",body),safe=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e};
+const button=(label,fn,cls="")=>{const b=safe("button",cls,label);b.type="button";b.addEventListener("click",fn);return b};
+const groups=[
+ {id:"read_entities",title:"Darf Geräte ansehen",hint:"Status und Messwerte sehen."},
+ {id:"write_entities",title:"Darf Geräte steuern",hint:"Ein-/Ausschalten und freigegebene Steuerung."},
+ {id:"alone_entities",title:"Zusätzlich ansehen im Allein-Modus",hint:"Nur aktiv, wenn der Allein-Modus eingeschaltet ist."},
+ {id:"alone_write_entities",title:"Zusätzlich steuern im Allein-Modus",hint:"Zusätzliche Steuerrechte im Allein-Modus."}
+];
+function drawDeviceGroups(selected={}){$("deviceGroups").replaceChildren();for(const g of groups){const box=safe("div","group");box.append(safe("h3","",g.title),safe("p","",g.hint));const search=safe("input","search");search.type="search";search.placeholder="Geräte suchen …";search.setAttribute("aria-label",g.title+" suchen");const list=safe("div","entity-list");for(const entity of catalog){const label=safe("label","entity-option");label.dataset.search=(entity.name+" "+entity.entity_id).toLocaleLowerCase("de");const cb=safe("input");cb.type="checkbox";cb.value=entity.entity_id;cb.checked=(selected[g.id]||[]).includes(entity.entity_id);const text=safe("span","",entity.name);text.append(safe("small","",entity.entity_id));label.append(cb,text);list.append(label)}search.addEventListener("input",()=>{const q=search.value.toLocaleLowerCase("de");for(const item of list.children)item.classList.toggle("hidden",!item.dataset.search.includes(q))});box.append(search,list);$("deviceGroups").append(box)}}
+function selected(id){const index=groups.findIndex(g=>g.id===id);return Array.from($("deviceGroups").children[index].querySelectorAll('input[type="checkbox"]:checked')).map(x=>x.value)}
+function resetForm(){editingId=null;$("guestForm").reset();$("guest_id").disabled=false;$("password").required=true;$("passwordHint").textContent="(mindestens 12 Zeichen)";$("editorTitle").textContent="Gast anlegen";$("saveGuest").textContent="Gast speichern";drawDeviceGroups();$("editor").classList.add("hidden")}
+function openEditor(guest=null){editingId=guest?guest.guest_id:null;$("guestForm").reset();$("username").value=guest?.username||"";$("guest_id").value=guest?.guest_id||"";$("guest_id").disabled=!!guest;$("password").value="";$("password").required=!guest;$("passwordHint").textContent=guest?"(leer lassen, um das Passwort beizubehalten)":"(mindestens 12 Zeichen)";$("editorTitle").textContent=guest?"Gast bearbeiten":"Gast anlegen";$("saveGuest").textContent=guest?"Änderungen speichern":"Gast speichern";drawDeviceGroups(guest||{});$("editor").classList.remove("hidden");$("editor").scrollIntoView({behavior:"smooth",block:"start"})}
+async function load(){try{const d=await request();alone=d.alone_mode;catalog=d.entities||[];guestCache=d.guests||[];$("mode").textContent=alone?"Aktiv – zusätzliche Freigaben sind wirksam":"Inaktiv";$("modeToggle").textContent=alone?"Deaktivieren":"Aktivieren";
+$("pending").replaceChildren();if(!d.pending.length)$("pending").append(safe("p","muted","Keine offenen Anfragen."));for(const item of d.pending){const el=safe("div","pending");el.append(safe("strong","",item.username+" – wartet auf Freigabe"));el.append(button("Freigeben",async()=>{try{await post({action:"approve_request",request_id:item.request_id,approved:true});await load()}catch(e){msg(e.message)}}));el.append(button("Ablehnen",async()=>{try{await post({action:"approve_request",request_id:item.request_id,approved:false});await load()}catch(e){msg(e.message)}},"danger"));$("pending").append(el)}
+$("guests").replaceChildren();if(!guestCache.length)$("guests").append(safe("p","muted","Noch keine Gäste angelegt."));for(const guest of guestCache){const el=safe("div","guest"),head=safe("div","guest-head");head.append(safe("strong","",guest.username),safe("span","badge",guest.enabled?"Aktiv":"Deaktiviert"));el.append(head);el.append(safe("p","muted",guest.guest_id+" · "+guest.read_entities.length+" Geräte lesbar · "+guest.write_entities.length+" steuerbar"));const actions=safe("div","actions");actions.append(button("Bearbeiten",()=>openEditor(guest)));actions.append(button(guest.enabled?"Deaktivieren":"Aktivieren",async()=>{try{await post({action:"set_guest_enabled",guest_id:guest.guest_id,enabled:!guest.enabled});await load()}catch(e){msg(e.message)}}));actions.append(button("Löschen",async()=>{if(!confirm("Gast "+guest.username+" wirklich löschen?"))return;try{await post({action:"remove_guest",guest_id:guest.guest_id});await load()}catch(e){msg(e.message)}},"danger"));el.append(actions);$("guests").append(el)}
+msg("Verwaltung geladen.");}catch(e){msg(e.message)}}
+$("guestForm").addEventListener("submit",async e=>{e.preventDefault();const payload={username:$("username").value.trim(),guest_id:$("guest_id").value.trim(),password:$("password").value};for(const g of groups)payload[g.id]=selected(g.id);if(editingId){payload.action="update_guest";payload.guest_id=editingId}else payload.action="add_guest";try{await post(payload);msg(editingId?"Gast und Gerätefreigaben aktualisiert.":"Gast angelegt.");resetForm();await load()}catch(err){msg(err.message)}});
+$("newGuest").addEventListener("click",()=>openEditor());$("closeEditor").addEventListener("click",resetForm);$("cancelEdit").addEventListener("click",resetForm);
 $("modeToggle").addEventListener("click",async()=>{try{await post({action:"set_alone_mode",enabled:!alone});await load()}catch(e){msg(e.message)}});
-window.addEventListener("message",event=>{
- if(event.origin!==window.location.origin||event.source!==window.parent||!event.data||event.data.type!=="guest-portal-auth"||typeof event.data.accessToken!=="string")return;
- accessToken=event.data.accessToken;
- load();
-});
-msg("Warte auf Anmeldung als Home-Assistant-Administrator.");
+window.addEventListener("message",event=>{if(event.origin!==window.location.origin||event.source!==window.parent||!event.data||event.data.type!=="guest-portal-auth"||typeof event.data.accessToken!=="string")return;accessToken=event.data.accessToken;load()});
 })();
 </script></body></html>
