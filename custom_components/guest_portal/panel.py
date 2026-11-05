@@ -31,7 +31,6 @@ async def async_register_panels(hass: HomeAssistant) -> None:
         module_url=module_url,
         config={"path": "/guest-portal"},
         require_admin=False,
-        update=True,
     )
     await panel_custom.async_register_panel(
         hass,
@@ -42,5 +41,4 @@ async def async_register_panels(hass: HomeAssistant) -> None:
         module_url=module_url,
         config={"path": "/guest-portal/admin"},
         require_admin=True,
-        update=True,
     )
