@@ -64,15 +64,32 @@ they also have an unrestricted native HA account or token.
 For an isolated guest experience, guests must use only the Guest Portal routes
 and must not receive an unrestricted HA account or long-lived HA token.
 
-## Next implementation stages
+## Implemented management capabilities
 
-1. Move guest CRUD, session revocation, approval and audit persistence behind
-   manager methods instead of allowing HTTP handlers to mutate runtime dicts.
-2. Add guest groups, reusable policy profiles, access schedules and expiry.
-3. Add an admin overview for active sessions, pending approvals, recent access
-   decisions and emergency revoke-all.
-4. Add tests for denied reads/controls, disabled guests, alone-mode additions,
-   expired sessions and revocation.
+- Guest records include category, creation timestamp and optional expiry.
+- Expired guests are denied at login and existing sessions stop working when
+  the guest expires.
+- Administrators can list active sessions, revoke one session, revoke all
+  sessions, or revoke every session belonging to one guest.
+- Reusable permission profiles store the four entity allowlists and can be
+  applied when creating or editing a guest.
+- The admin page shows pending approvals, active sessions, recent access
+  decisions and guest expiry.
+- Audit history is bounded to the latest 500 events in runtime memory and is
+  included in the persistent guest store on subsequent store writes. It is not
+  a tamper-proof or guaranteed-durable security log.
+
+## Remaining work
+
+1. Move guest CRUD, session revocation, approval and profile management fully
+   behind manager methods rather than allowing HTTP handlers to mutate runtime
+   dictionaries.
+2. Add real role-based policy semantics (current guest category is descriptive;
+   actual permissions still come from entity allowlists and profiles).
+3. Add access schedules, recurring windows and guest groups.
+4. Add automated tests for denied reads/controls, disabled guests, alone-mode
+   additions, expired sessions and revocation, then test against supported HA
+   releases.
 5. Evaluate native HA identity integration separately; never claim full native
    API enforcement without a supported HA hook and integration tests.
 
