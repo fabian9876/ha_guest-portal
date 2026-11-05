@@ -1,0 +1,34 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "HA Guest Portal",
+        "description": "Configure presence monitoring and guest session defaults.",
+        "data": {
+          "presence_zone": "Home zone",
+          "presence_entities": "People and device trackers to monitor",
+          "absence_delay": "Minutes everyone must be away",
+          "notify_service": "Notification service (optional)",
+          "session_minutes": "Default guest session duration in minutes"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Only one instance is supported."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "HA Guest Portal options",
+        "data": {
+          "presence_zone": "Home zone",
+          "presence_entities": "People and device trackers to monitor",
+          "absence_delay": "Minutes everyone must be away",
+          "notify_service": "Notification service (optional)",
+          "session_minutes": "Default guest session duration in minutes"
+        }
+      }
+    }
+  }
+}
