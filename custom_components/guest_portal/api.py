@@ -260,7 +260,12 @@ class GuestStatesView(HomeAssistantView):
         devices = device_registry.async_get(hass)
         registry = entity_registry.async_get(hass)
         states = []
+        manager = data.get("access_manager")
         for entity_id in sorted(readable):
+            if manager and not manager.authorize_entity(
+                guest, entity_id, "read", alone
+            ):
+                continue
             state = hass.states.get(entity_id)
             if state is None:
                 continue
