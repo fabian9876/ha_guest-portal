@@ -396,6 +396,31 @@ class GuestAdminApiView(HomeAssistantView):
             }
             await data["storage"].async_save()
             return web.json_response({"status": "created"})
+        if action == "update_guest":
+            guest_id = str(body.get("guest_id", ""))
+            guest = data["storage"].data["guests"].get(guest_id)
+            if not guest:
+                return _json_error("Guest not found.", 404)
+            username = str(body.get("username", guest["username"])).strip()
+            if not username or len(username) > 64:
+                return _json_error("Username must contain 1–64 characters.")
+            if any(other_id != guest_id and item["username"].casefold() == username.casefold()
+                   for other_id, item in data["storage"].data["guests"].items()):
+                return _json_error("Username already exists.", 409)
+            guest["username"] = username
+            for field in ("read_entities", "write_entities", "alone_entities", "alone_write_entities"):
+                guest[field] = _clean_entity_list(body.get(field, guest.get(field, [])))
+            password = str(body.get("password", ""))
+            if password:
+                if len(password) < 12 or len(password) > 256:
+                    return _json_error("New password must contain 12–256 characters.")
+                salt, digest = await data["storage"].async_hash_password(password)
+                guest["salt"], guest["password_hash"] = salt, digest
+                for token, session in list(data["sessions"].items()):
+                    if session["guest_id"] == guest_id:
+                        data["sessions"].pop(token, None)
+            await data["storage"].async_save()
+            return web.json_response({"status": "updated"})
         if action in {"remove_guest", "set_guest_enabled"}:
             guest_id = str(body.get("guest_id", ""))
             guest = data["storage"].data["guests"].get(guest_id)
