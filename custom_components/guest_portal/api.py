@@ -121,6 +121,9 @@ class GuestLoginView(HomeAssistantView):
             if not hmac.compare_digest(otp_hash, challenge["otp_hash"]):
                 return _json_error("Code expired or invalid.", 401)
             data["challenges"].pop(challenge_id, None)
+            guest = data["storage"].data["guests"].get(challenge["guest_id"])
+            if not guest or not data["access_manager"].guest_is_active(guest):
+                return _json_error("Guest access has expired or been disabled.", 401)
             token = _new_session(request.app["hass"], data, challenge["guest_id"])
             return web.json_response({"status": "ok", "token": token})
 
@@ -432,7 +435,7 @@ class GuestAdminApiView(HomeAssistantView):
                 "alone_entities": _clean_entity_list(body.get("alone_entities")),
                 "alone_write_entities": _clean_entity_list(body.get("alone_write_entities")),
                 "enabled": True,
-                "role": str(body.get("role", "custom"))[:32],
+                "role": body.get("role", "custom") if body.get("role", "custom") in {"custom", "guest", "family", "housekeeper"} else "custom",
                 "profile_id": body.get("profile_id") or None,
                 "created_at": int(time.time()),
                 "expires_at": expires_at,
@@ -466,7 +469,8 @@ class GuestAdminApiView(HomeAssistantView):
             guest["username"] = username
             for field in ("read_entities", "write_entities", "alone_entities", "alone_write_entities"):
                 guest[field] = _clean_entity_list(body.get(field, guest.get(field, [])))
-            guest["role"] = str(body.get("role", guest.get("role", "custom")))[:32]
+            role = body.get("role", guest.get("role", "custom"))
+            guest["role"] = role if role in {"custom", "guest", "family", "housekeeper"} else "custom"
             guest["profile_id"] = body.get("profile_id", guest.get("profile_id")) or None
             if "expires_at" in body:
                 try:
