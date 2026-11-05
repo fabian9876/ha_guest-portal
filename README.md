@@ -1,6 +1,6 @@
 # HA Guest Portal
 
-A Home Assistant custom integration for a controlled guest portal. Version 0.4.0 adds native sidebar entries for the guest portal and administrator dashboard.
+A Home Assistant custom integration that provides a separate, restricted guest portal for Home Assistant entities. Version **1.0.0** includes centralized guest access management, redesigned guest and admin interfaces, and QR-code guest access.
 
 ## Zentrale Gastverwaltung
 
@@ -21,7 +21,7 @@ ausschließlich die Gastzugänge dieser Integration verwenden.
 
 Details: [Architekturdokumentation](docs/architecture.md).
 
-## Features in 0.4.0
+## Features in 1.0.0
 
 - HACS custom integration and Home Assistant config/options flow.
 - Guest accounts persisted in Home Assistant storage. Passwords are hashed with PBKDF2-HMAC-SHA256 (310,000 iterations); plaintext passwords are not stored.
@@ -34,6 +34,11 @@ Details: [Architekturdokumentation](docs/architecture.md).
 - **Gäste** sidebar panel with the integration's separate guest login and restricted portal.
 - **Gastverwaltung** sidebar panel, visible only to Home Assistant administrators.
 - Direct routes `/guest-portal` and `/guest-portal/admin` remain available.
+- Per-guest QR access: guests can open the standalone portal without a Home Assistant frontend account. QR access is scoped to that guest's existing entity permissions.
+- QR tokens are high-entropy, stored as SHA-256 hashes, generated and revoked by administrators, and expire after at most 30 days (or earlier when the guest account expires). Generating a new QR code invalidates the previous code for that guest.
+- QR images are generated locally in Home Assistant using Segno; access tokens are not sent to an external QR-code service.
+- Guest activity timestamp in the admin dashboard and a one-click seven-day extension for guests with an expiry date.
+- Central guest access manager, audit history and Home Assistant access-decision events.
 
 ## Installation via HACS
 
@@ -51,7 +56,7 @@ After the integration is configured, Home Assistant registers two sidebar entrie
 
 **Important authentication boundary:** Home Assistant requires a Home Assistant frontend login before anyone can see its sidebar. The integration's guest username/password is a separate login inside the Gäste panel; it does not replace the initial Home Assistant login or create a restricted Home Assistant user. A guest using the sidebar therefore still needs a Home Assistant account to enter the frontend. Hiding other sidebar entries does not reduce the permissions of that Home Assistant account.
 
-If guests must not receive Home Assistant accounts, use the standalone `/guest-portal` route instead of the sidebar panel, and do not expose the Home Assistant administration interface to guests.
+If guests must not receive Home Assistant accounts, use the standalone `/guest-portal` route or a QR code instead of the sidebar panel, and do not expose the Home Assistant administration interface to guests.
 
 ## Managing guests
 
@@ -97,7 +102,19 @@ Set `approved: false` to reject. The request expires after 10 minutes.
 - `guest_portal.set_guest_enabled`: `guest_id`, `enabled`
 - `guest_portal.set_alone_mode`: `enabled`
 
-Disabling/removing a guest revokes their active sessions.
+Disabling/removing a guest revokes their active sessions and QR tokens.
+
+## QR guest access
+
+Administrators can create a QR code for an enabled guest from the **Gastverwaltung** dashboard. The code opens `/guest-portal` directly and exchanges its token for a normal, restricted guest session; the guest does not need a Home Assistant frontend account. The QR code can be printed or its link copied from the dashboard.
+
+- Each guest has one active QR token. Creating a replacement invalidates the previous token.
+- QR links are reusable until revoked or expired. Their maximum lifetime is 30 days and is shortened when the guest account expires sooner.
+- Administrators can revoke a guest's QR access at any time. Disabling or deleting the guest also revokes QR access.
+- The QR token is stored hashed in Home Assistant storage. The QR image is generated locally; no external QR service receives the token.
+- Anyone who obtains the QR code or link can use it as that guest until it expires or is revoked. Share it only with the intended guest.
+
+QR access does not create a Home Assistant user, grant administrator privileges, or bypass the guest's entity allowlist.
 
 ## Authentication modes
 
@@ -116,14 +133,10 @@ The portal page is available at `/guest-portal` on the same Home Assistant host.
 - The portal does not implement its own TLS. HTTPS must be provided by the Home Assistant deployment.
 - The login API is unauthenticated by design; use HTTPS and network-level protections.
 - OTP delivery depends on the configured notify service being correctly targeted.
-- Guest sessions and pending approval/challenge state are in memory; a Home Assistant restart logs guests out and clears pending requests.
+- Guest sessions and pending approval/challenge state are in memory; a Home Assistant restart logs guests out and clears pending requests. QR tokens are persisted, but a new guest session must be created after a restart.
 - The guest and administrator sidebar entries wrap the existing portal pages. The administrator panel is hidden from non-admin Home Assistant users, and its API independently checks administrator status.
-- The integration has not yet been tested against your specific Home Assistant version or hardware. Review the code and test with non-critical entities before use.
+- The integration has passed the repository's automated Python compilation and JSON metadata checks. Live testing against your specific Home Assistant version, hardware, reverse proxy and mobile QR scanners is still required. Test with non-critical entities before use.
 
-## Roadmap
+## Version 1.0.0
 
-- [x] 0.1.0 — HACS scaffold and configuration flow
-- [x] 0.2.0 — Guest records, authentication, approvals/OTP and server-side allowlists
-- [x] 0.3.0 — Initial visual administrator dashboard
-- [ ] 0.4.0 — Audit log, automated integration tests and security review
-- [ ] 1.0.0 — Stable release
+The first feature-complete release brings together the guest portal, centralized guest access management, redesigned interfaces and QR-based guest access. See the security notes above for deployment boundaries and the remaining live-validation requirements.
