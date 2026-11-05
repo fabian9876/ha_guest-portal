@@ -12,12 +12,13 @@ A Home Assistant custom integration for a controlled guest portal. Version 0.2.0
 - Server-side read and write allowlists. The browser cannot request arbitrary entity states or arbitrary Home Assistant services.
 - Extra read/write entities can be assigned to a guest and become available only while alone mode is active.
 - Optional automatic alone mode from configured person/device_tracker entities, with an absence delay. Unknown/unavailable presence fails closed.
-- Guest web page at \`/guest-portal\`.
+- Guest web page at `/guest-portal`.
+- Administrator dashboard at `/guest-portal/admin` (requires a Home Assistant administrator login).
 
 ## Installation via HACS
 
 1. Open HACS → Integrations → three-dot menu → Custom repositories.
-2. Add \`https://github.com/fabian9876/ha_guest-portal\` as an **Integration**.
+2. Add `https://github.com/fabian9876/ha_guest-portal` as an **Integration**.
 3. Install **HA Guest Portal**, restart Home Assistant and add the integration under Settings → Devices & services.
 4. Configure the home zone, monitored people/devices, authentication mode and notification service.
 
@@ -27,9 +28,9 @@ Use Home Assistant's Developer Tools → Actions (older versions: Services). The
 
 ### Create a guest
 
-Action: \`guest_portal.add_guest\`
+Action: `guest_portal.add_guest`
 
-\`\`\`yaml
+```yaml
 username: Alex
 guest_id: alex
 password: "use-a-unique-password-at-least-12-chars"
@@ -42,28 +43,28 @@ alone_entities:
   - switch.office_socket
 alone_write_entities:
   - switch.office_socket
-\`\`\`
+```
 
-The guest can always read \`read_entities\` and control only \`write_entities\`. The extra \`alone_entities\` and \`alone_write_entities\` are added only while alone mode is active. A guest ID may contain letters, numbers, underscore and hyphen.
+The guest can always read `read_entities` and control only `write_entities`. The extra `alone_entities` and `alone_write_entities` are added only while alone mode is active. A guest ID may contain letters, numbers, underscore and hyphen.
 
 ### Approve a login
 
 In approval mode, a login notification contains a request ID. Approve or reject it with:
 
-\`\`\`yaml
+```yaml
 action: guest_portal.approve_request
 data:
   request_id: "REQUEST_ID_FROM_NOTIFICATION"
   approved: true
-\`\`\`
+```
 
-Set \`approved: false\` to reject. The request expires after 10 minutes.
+Set `approved: false` to reject. The request expires after 10 minutes.
 
 ### Other management actions
 
-- \`guest_portal.remove_guest\`: \`guest_id\`
-- \`guest_portal.set_guest_enabled\`: \`guest_id\`, \`enabled\`
-- \`guest_portal.set_alone_mode\`: \`enabled\`
+- `guest_portal.remove_guest`: `guest_id`
+- `guest_portal.set_guest_enabled`: `guest_id`, `enabled`
+- `guest_portal.set_alone_mode`: `enabled`
 
 Disabling/removing a guest revokes their active sessions.
 
@@ -76,7 +77,7 @@ The OTP is valid for five minutes. Approval requests expire after ten minutes. S
 
 ## Guest controls
 
-The portal page is available at \`/guest-portal\` on the same Home Assistant host. It shows only explicitly allowed entities. In this version the supported controls are on/off/toggle for light, switch and fan entities (and the restricted Home Assistant generic turn_on/turn_off/toggle services). Lock, alarm, cover, climate and arbitrary service calls are deliberately not exposed.
+The portal page is available at `/guest-portal` on the same Home Assistant host. It shows only explicitly allowed entities. In this version the supported controls are on/off/toggle for light, switch and fan entities (and the restricted Home Assistant generic turn_on/turn_off/toggle services). Lock, alarm, cover, climate and arbitrary service calls are deliberately not exposed.
 
 ## Security notes and limitations
 
@@ -94,5 +95,4 @@ The portal page is available at \`/guest-portal\` on the same Home Assistant hos
 - [x] 0.2.0 — Guest records, authentication, approvals/OTP and server-side allowlists
 - [x] 0.3.0 — Initial visual administrator dashboard
 - [ ] 0.4.0 — Audit log, automated integration tests and security review
-- [ ] 0.4.0 — Automated integration tests and security review
 - [ ] 1.0.0 — Stable release
