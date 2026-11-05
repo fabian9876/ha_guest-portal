@@ -32,13 +32,15 @@ input,select{width:100%}select[multiple]{height:9rem}button{cursor:pointer;margi
 (() => {
 const $=id=>document.getElementById(id), api="/api/guest_portal/admin";
 const msg=t=>$("message").textContent=t;
-const post=async body=>{const r=await fetch(api,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Fehler");return d};
+let accessToken=null;
+const authHeaders=()=>accessToken?{Authorization:"Bearer "+accessToken}:{};
+const post=async body=>{const r=await fetch(api,{method:"POST",headers:{"Content-Type":"application/json",...authHeaders()},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Fehler");return d};
 const selected=id=>Array.from($(id).selectedOptions).map(o=>o.value);
 const button=(label,fn)=>{const b=document.createElement("button");b.textContent=label;b.addEventListener("click",fn);return b};
 let alone=false, editingId=null;
 async function load(){
  try{
- const r=await fetch(api);const d=await r.json();if(!r.ok)throw new Error(d.error||"Kein Zugriff");
+ const r=await fetch(api,{headers:authHeaders()});const d=await r.json();if(!r.ok)throw new Error(d.error||"Kein Zugriff");
  alone=d.alone_mode;$("mode").textContent=alone?"Aktiv":"Inaktiv";$("modeToggle").textContent=alone?"Deaktivieren":"Aktivieren";
  for(const id of ["read_entities","write_entities","alone_entities","alone_write_entities"]){
  const s=$(id);s.replaceChildren();for(const entity of d.entities){const o=document.createElement("option");o.value=entity;o.textContent=entity;s.append(o)}
@@ -69,6 +71,11 @@ $("create").addEventListener("submit",async e=>{e.preventDefault();try{
 }catch(err){msg(err.message)}});
 $("cancelEdit").addEventListener("click",()=>{editingId=null;$("create").reset();$("password").required=true;$("submitButton").textContent="Gast speichern";msg("Bearbeitung abgebrochen.")});
 $("modeToggle").addEventListener("click",async()=>{try{await post({action:"set_alone_mode",enabled:!alone});await load()}catch(e){msg(e.message)}});
-load();
+window.addEventListener("message",event=>{
+ if(event.origin!==window.location.origin||event.source!==window.parent||!event.data||event.data.type!=="guest-portal-auth"||typeof event.data.accessToken!=="string")return;
+ accessToken=event.data.accessToken;
+ load();
+});
+msg("Warte auf Anmeldung als Home-Assistant-Administrator.");
 })();
 </script></body></html>
