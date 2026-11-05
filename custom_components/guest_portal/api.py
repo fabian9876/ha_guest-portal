@@ -417,6 +417,10 @@ class GuestAdminApiView(HomeAssistantView):
             guests = data["storage"].data["guests"]
             if guest_id in guests or any(g["username"].casefold() == username.casefold() for g in guests.values()):
                 return _json_error("Guest ID or username already exists.", 409)
+            try:
+                expires_at = _clean_expiry(body.get("expires_at"))
+            except ValueError as err:
+                return _json_error(str(err))
             salt, digest = await data["storage"].async_hash_password(password)
             data["storage"].data["guests"][guest_id] = {
                 "guest_id": guest_id,
@@ -431,7 +435,7 @@ class GuestAdminApiView(HomeAssistantView):
                 "role": str(body.get("role", "custom"))[:32],
                 "profile_id": body.get("profile_id") or None,
                 "created_at": int(time.time()),
-                "expires_at": _clean_expiry(body.get("expires_at")),
+                "expires_at": expires_at,
             }
             await data["storage"].async_save()
             return web.json_response({"status": "created"})
@@ -452,7 +456,17 @@ class GuestAdminApiView(HomeAssistantView):
             guest["role"] = str(body.get("role", guest.get("role", "custom")))[:32]
             guest["profile_id"] = body.get("profile_id", guest.get("profile_id")) or None
             if "expires_at" in body:
-                guest["expires_at"] = _clean_expiry(body.get("expires_at"))
+                try:
+                    guest["expires_at"] = _clean_expiry(body.get("expires_at"))
+                except ValueError as err:
+                    return _json_error(str(err))
+            profile_id = body.get("profile_id")
+            if profile_id:
+                profile = data["storage"].data.setdefault("profiles", {}).get(profile_id)
+                if not profile:
+                    return _json_error("Permission profile not found.", 404)
+                for field in ("read_entities", "write_entities", "alone_entities", "alone_write_entities"):
+                    guest[field] = list(profile.get(field, []))
             password = str(body.get("password", ""))
             if password:
                 if len(password) < 12 or len(password) > 256:
