@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import re
 import secrets
 import time
 from pathlib import Path
@@ -412,6 +413,13 @@ class GuestAdminApiView(HomeAssistantView):
                         data["sessions"].pop(token, None)
             await data["storage"].async_save()
             return web.json_response({"status": "ok"})
+        if action == "set_alone_mode":
+            enabled = bool(body.get("enabled"))
+            data["alone_mode"] = enabled
+            self.hass.bus.async_fire("guest_portal_alone_mode_changed", {
+                "entry_id": data["entry"].entry_id, "enabled": enabled, "source": "admin_dashboard"
+            })
+            return web.json_response({"status": "ok", "alone_mode": enabled})
         if action == "approve_request":
             request_id = str(body.get("request_id", ""))
             pending = data["pending"].get(request_id)
