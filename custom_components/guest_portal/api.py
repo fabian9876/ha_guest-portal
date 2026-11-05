@@ -262,6 +262,8 @@ class GuestStatesView(HomeAssistantView):
         if not session:
             return _json_error("Authentication required.", 401)
         _, _, guest = session
+        guest["last_seen_at"] = int(time.time())
+        await data["storage"].async_save()
         alone = data["alone_mode"]
         readable, writable = _active_entity_lists(guest, alone, data)
         states = []
