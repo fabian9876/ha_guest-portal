@@ -76,7 +76,11 @@ def _get_session(request: web.Request, data: dict):
     return token, session, guest
 
 
-def _active_entity_lists(guest: dict, alone_mode: bool) -> tuple[set[str], set[str]]:
+def _active_entity_lists(guest: dict, alone_mode: bool, data: dict | None = None) -> tuple[set[str], set[str]]:
+    """Compatibility wrapper around the central policy manager."""
+    manager = data.get("access_manager") if data else None
+    if manager:
+        return manager.entity_permissions(guest, alone_mode)
     readable = set(guest.get("read_entities", []))
     writable = set(guest.get("write_entities", []))
     if alone_mode:
@@ -248,9 +252,12 @@ class GuestStatesView(HomeAssistantView):
             return _json_error("Authentication required.", 401)
         _, _, guest = session
         alone = data["alone_mode"]
-        readable, writable = _active_entity_lists(guest, alone)
+        readable, writable = _active_entity_lists(guest, alone, data)
         states = []
+        manager = data.get("access_manager")
         for entity_id in sorted(readable):
+            if manager and not manager.authorize_entity(guest, entity_id, "read", alone):
+                continue
             state = request.app["hass"].states.get(entity_id)
             if state is None:
                 continue
@@ -285,8 +292,12 @@ class GuestControlView(HomeAssistantView):
             return _json_error("Invalid JSON.")
         entity_id = str(body.get("entity_id", ""))
         service = str(body.get("service", ""))
-        _, writable = _active_entity_lists(guest, data["alone_mode"])
-        if entity_id not in writable:
+        manager = data.get("access_manager")
+        permitted = (
+            manager.authorize_entity(guest, entity_id, "control", data["alone_mode"])
+            if manager else entity_id in _active_entity_lists(guest, data["alone_mode"])[1]
+        )
+        if not permitted:
             return _json_error("This entity is not permitted.", 403)
         domain = entity_id.split(".", 1)[0]
         allowed_domains = {"light", "switch", "fan", "homeassistant"}
