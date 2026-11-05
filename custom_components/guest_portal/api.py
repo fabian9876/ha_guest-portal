@@ -9,6 +9,7 @@ import time
 from pathlib import Path
 
 from aiohttp import web
+from homeassistant.components import persistent_notification
 from homeassistant.components.http import HomeAssistantView
 
 from .const import (
@@ -23,10 +24,17 @@ def _json_error(message: str, status: int = 400) -> web.Response:
     return web.json_response({"error": message}, status=status)
 
 
+def _active_entry_data(hass):
+    """Return the active entry data, if the integration is configured."""
+    domain_data = hass.data.get(DOMAIN, {})
+    entry_id = domain_data.get("active_entry")
+    return domain_data.get("entries", {}).get(entry_id)
+
+
 def _notify(hass, service_name: str, title: str, message: str) -> None:
     """Send a notification through the configured HA notify service."""
     if not service_name or "." not in service_name:
-        hass.components.persistent_notification.async_create(message, title=title)
+        persistent_notification.async_create(hass, message, title=title)
         return
     domain, service = service_name.split(".", 1)
     hass.async_create_task(
@@ -84,7 +92,9 @@ class GuestLoginView(HomeAssistantView):
     requires_auth = False
 
     async def post(self, request: web.Request) -> web.Response:
-        data = self.hass.data[DOMAIN]["entries"][self.hass.data[DOMAIN]["active_entry"]]
+        data = _active_entry_data(self.hass)
+        if data is None:
+            return _json_error("Guest Portal is not configured.", 503)
         if not _rate_allowed(data, request.remote or "unknown"):
             return _json_error("Too many attempts. Try again later.", 429)
         try:
@@ -185,10 +195,14 @@ class GuestApprovalView(HomeAssistantView):
     requires_auth = False
 
     async def get(self, request: web.Request, request_id: str) -> web.Response:
-        data = self.hass.data[DOMAIN]["entries"][self.hass.data[DOMAIN]["active_entry"]]
+        data = _active_entry_data(self.hass)
+        if data is None:
+            return _json_error("Guest Portal is not configured.", 503)
         pending = data["pending"].get(request_id)
         if not pending or pending["expires"] <= time.time():
-            data["pending"].pop(request_id, None)
+            expired = data["pending"].pop(request_id, None)
+            if expired and expired.get("session_token"):
+                data["sessions"].pop(expired["session_token"], None)
             return _json_error("Request expired.", 404)
         if pending["status"] == "pending":
             return web.json_response({"status": "pending"})
@@ -208,7 +222,9 @@ class GuestLogoutView(HomeAssistantView):
     requires_auth = False
 
     async def post(self, request: web.Request) -> web.Response:
-        data = self.hass.data[DOMAIN]["entries"][self.hass.data[DOMAIN]["active_entry"]]
+        data = _active_entry_data(self.hass)
+        if data is None:
+            return _json_error("Guest Portal is not configured.", 503)
         session = _get_session(request, data)
         if session:
             data["sessions"].pop(session[0], None)
@@ -223,7 +239,9 @@ class GuestStatesView(HomeAssistantView):
     requires_auth = False
 
     async def get(self, request: web.Request) -> web.Response:
-        data = self.hass.data[DOMAIN]["entries"][self.hass.data[DOMAIN]["active_entry"]]
+        data = _active_entry_data(self.hass)
+        if data is None:
+            return _json_error("Guest Portal is not configured.", 503)
         session = _get_session(request, data)
         if not session:
             return _json_error("Authentication required.", 401)
@@ -253,7 +271,9 @@ class GuestControlView(HomeAssistantView):
     requires_auth = False
 
     async def post(self, request: web.Request) -> web.Response:
-        data = self.hass.data[DOMAIN]["entries"][self.hass.data[DOMAIN]["active_entry"]]
+        data = _active_entry_data(self.hass)
+        if data is None:
+            return _json_error("Guest Portal is not configured.", 503)
         session = _get_session(request, data)
         if not session:
             return _json_error("Authentication required.", 401)
