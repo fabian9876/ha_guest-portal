@@ -18,6 +18,8 @@ SERVICE_ADD_GUEST = "add_guest"
 SERVICE_REMOVE_GUEST = "remove_guest"
 SERVICE_SET_GUEST_ENABLED = "set_guest_enabled"
 SERVICE_APPROVE_REQUEST = "approve_request"
+SERVICE_REVOKE_ALL_SESSIONS = "revoke_all_sessions"
+SERVICE_REVOKE_GUEST_SESSIONS = "revoke_guest_sessions"
 
 ATTR_ENABLED = "enabled"
 EVENT_ALONE_MODE_CHANGED = "guest_portal_alone_mode_changed"
