@@ -18,6 +18,37 @@ button,input,select{font:inherit;border-radius:var(--ha-control-border-radius,6p
 .qr-card h2{justify-content:center}.qr-card h2:before{display:none}.qr-card img{display:block;width:240px;height:240px;max-width:100%;margin:16px auto;background:white;padding:10px;border-radius:8px}
 .qr-card p{color:var(--muted);font-size:.88rem;overflow-wrap:anywhere}.qr-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 @media print{body *{visibility:hidden!important}#qrDialog,#qrDialog *{visibility:visible!important}#qrDialog{position:absolute;inset:0;background:white;padding:0}.qr-card{border:0;box-shadow:none;color:#111;background:white;width:100%;max-width:100%}.qr-card p{color:#333}.qr-actions{display:none!important}}
+
+/* Home Assistant frontend-inspired layout */
+:root{font-family:Roboto,"Noto Sans",Arial,sans-serif;--radius:var(--ha-card-border-radius,12px)}
+body{background:var(--primary-background-color,#111e2c)}
+.wrap{max-width:none;margin:0;padding:0 32px 48px 264px}
+.topbar{height:56px;position:sticky;top:0;margin:0 -32px 24px -264px;padding:0 28px 0 280px;background:var(--app-header-background-color,var(--primary-background-color,#111e2c));border-bottom:1px solid var(--divider-color,#394b5d);backdrop-filter:none;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.brand-mark{width:34px;height:34px;border-radius:9px;background:var(--primary-color,#03a9f4);font-size:21px}
+.brand-copy strong{font-size:14px;font-weight:500}.brand-copy span{font-size:12px}
+.section-nav{position:fixed;z-index:4;left:0;top:56px;bottom:0;width:240px;display:flex;flex-direction:column;align-items:stretch;gap:4px;overflow-y:auto;padding:18px 12px;background:var(--sidebar-background-color,var(--primary-background-color,#111e2c));border:0;border-right:1px solid var(--divider-color,#394b5d);margin:0}
+.section-nav:before{content:"Gastportal";font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--secondary-text-color,#9aa7b5);padding:8px 12px 12px}
+.section-nav a{display:flex;align-items:center;min-height:42px;padding:0 14px;border-radius:24px;color:var(--primary-text-color,#e1e1e1);font-size:14px}
+.section-nav a:hover,.section-nav a:focus{background:var(--secondary-background-color,#263747)}
+.page-intro{padding:10px 0 18px}.page-intro h1{font-size:24px;font-weight:400;letter-spacing:0}
+.page-intro p{font-size:14px}
+#message{border-radius:8px;background:var(--secondary-background-color,#263747)}
+.panel{border:0;border-radius:var(--ha-card-border-radius,12px);background:var(--card-background-color,#1c2938);padding:20px;margin:16px 0;box-shadow:var(--ha-card-box-shadow,0 2px 4px rgba(0,0,0,.12))}
+.panel h2{font-size:16px;font-weight:500}.panel h2:before{display:none}
+button,input,select{border-radius:var(--ha-control-border-radius,8px)}
+button{font-weight:500;box-shadow:none}button.secondary{background:transparent}
+.guest,.pending,.group{border:1px solid var(--divider-color,#394b5d);border-radius:10px;background:var(--secondary-background-color,#263747)}
+.badge{border-radius:16px}
+#qrDialog{backdrop-filter:blur(3px)}.qr-card{border:0;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.28)}
+@media(max-width:800px){
+ .wrap{padding:0 16px 32px}
+ .topbar{margin:0 -16px 18px;padding:0 16px;height:56px}
+ .section-nav{position:sticky;top:56px;z-index:4;width:auto;bottom:auto;flex-direction:row;align-items:center;overflow-x:auto;padding:8px 0;margin:0 -16px 12px;border:0;border-bottom:1px solid var(--divider-color,#394b5d)}
+ .section-nav:before{display:none}.section-nav a{min-height:38px;padding:0 13px}
+ .admin-tag{display:inline-flex}
+}
+@media(max-width:520px){.wrap{padding:0 12px 28px}.topbar{margin:0 -12px 14px;padding:0 12px}.panel{padding:16px}.admin-tag{display:none}}
+
 </style></head><body><div class="wrap">
 <header class="topbar"><div class="brand-mark">⌂</div><div class="brand-copy"><strong>Home Assistant</strong><span>Gastportal · Administration</span></div><span class="spacer"></span><span class="admin-tag">Administrator</span></header>
 <header class="page-intro"><h1>Gastverwaltung</h1><p>Gastzugänge, Geräteberechtigungen und aktive Sitzungen zentral verwalten.</p><p id="message" role="status">Warte auf Anmeldung als Home-Assistant-Administrator.</p></header>
