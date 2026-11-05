@@ -1,8 +1,8 @@
 # HA Guest Portal
 
-A Home Assistant custom integration for a controlled guest portal. Version 0.2.0 adds guest accounts, authentication, server-side entity allowlists and an initial guest web page.
+A Home Assistant custom integration for a controlled guest portal. Version 0.3.0 adds guest accounts, authentication, server-side entity allowlists and an initial guest web page.
 
-## Features in 0.2.0
+## Features in 0.3.0
 
 - HACS custom integration and Home Assistant config/options flow.
 - Guest accounts persisted in Home Assistant storage. Passwords are hashed with PBKDF2-HMAC-SHA256 (310,000 iterations); plaintext passwords are not stored.
