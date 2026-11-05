@@ -2,64 +2,82 @@
 <html lang="de">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#101827"><title>Gästeportal</title>
+<meta name="theme-color" content="#111318"><title>Home Assistant – Gäste</title>
 <style>
-:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,sans-serif;background:#101827;color:#edf2f7;--panel:#1a2638;--line:#304057;--muted:#a9b7ca;--accent:#78a9ff;--good:#79d6a5}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 15% 0%,#243b5b 0,transparent 42%),#101827}
-.wrap{width:min(1050px,100%);margin:auto;padding:clamp(18px,4vw,42px)}header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:26px}
-.brand{display:flex;align-items:center;gap:13px}.logo{width:46px;height:46px;border-radius:15px;background:#294b78;display:grid;place-items:center;font-size:24px}
-h1{font-size:clamp(1.5rem,4vw,2.1rem);margin:0}p{color:var(--muted);line-height:1.5}.sub{margin:5px 0 0}
-.panel{background:#172337eF;border:1px solid var(--line);border-radius:22px;padding:clamp(18px,3vw,28px);box-shadow:0 18px 60px #0003}
-label{display:block;color:var(--muted);font-size:.9rem;margin:14px 0 7px}input,button{font:inherit;border-radius:12px;padding:12px 14px}input{width:100%;border:1px solid var(--line);background:#101a2a;color:#fff}
-button{border:1px solid #47658c;background:#284b78;color:#fff;cursor:pointer;font-weight:650}button:disabled{opacity:.5;cursor:wait}.secondary{background:transparent;border-color:var(--line);color:#d5e1f1}.danger{background:#512e3b;border-color:#754456}
-.actions{display:flex;gap:9px;flex-wrap:wrap}.actions button{flex:1;min-width:90px}.hidden{display:none!important}
-#message{min-height:24px;margin:12px 0;color:#c6d6eb}.statusbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:18px 0}
-.pill{display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:99px;background:#253a54;color:#dce9fb;font-size:.85rem}.dot{width:8px;height:8px;border-radius:50%;background:var(--good)}
-.tools{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.tools input{flex:1;min-width:190px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:13px}
-.device{background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:17px;min-width:0}
-.device-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.device-name{font-weight:700;font-size:1rem;overflow-wrap:anywhere}.device-id{font-size:.76rem;color:var(--muted);margin-top:5px;overflow-wrap:anywhere}
-.state{font-size:1.35rem;font-weight:750;margin:18px 0 14px}.state small{font-size:.85rem;color:var(--muted);font-weight:500}
-.empty{grid-column:1/-1;border:1px dashed #53647c;border-radius:16px;padding:28px;text-align:center;color:var(--muted)}
-footer{margin-top:22px;text-align:right}
-@media(max-width:520px){.wrap{padding:16px}.panel{border-radius:17px}header{align-items:flex-start}}
+:root{color-scheme:dark;font-family:Roboto,"Segoe UI",Arial,sans-serif;background:var(--primary-background-color,#111318);color:var(--primary-text-color,#e1e2e8);--bg:#111318;--surface:#1c1c1e;--surface2:#242529;--line:#38393e;--muted:#aeb0b8;--blue:#9abcf7;--blue-bg:#263b59;--accent:#03a9f4;--green:#9bd6a7}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);min-height:100vh}button,input{font:inherit}button{cursor:pointer}
+.shell{min-height:100vh;display:grid;grid-template-columns:250px minmax(0,1fr)}
+.sidebar{background:#18191c;border-right:1px solid #303136;padding:18px 12px;display:flex;flex-direction:column;gap:20px}
+.ha-brand{display:flex;align-items:center;gap:12px;padding:4px 10px 14px;font-size:18px;font-weight:600}.ha-mark{width:34px;height:34px;border-radius:50%;background:#03a9f4;color:#fff;display:grid;place-items:center;font-size:23px;font-weight:700}
+.nav-title{font-size:12px;color:var(--muted);padding:0 12px 6px;text-transform:uppercase;letter-spacing:.07em}.nav{display:grid;gap:4px}.nav button{border:0;background:transparent;color:var(--primary-text-color,#e1e2e8);text-align:left;padding:11px 13px;border-radius:24px;display:flex;gap:13px;align-items:center}.nav button:hover{background:#292a2e}.nav button.active{background:#263b59;color:#c5dcff}.nav-icon{width:20px;text-align:center;font-size:17px}.side-foot{margin-top:auto;color:var(--muted);font-size:12px;padding:12px}
+main{min-width:0;padding:28px clamp(18px,3vw,42px) 50px;max-width:1600px;width:100%;margin:0 auto}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:28px}.eyebrow{color:var(--muted);font-size:13px;margin-bottom:5px}.page-title{font-size:27px;font-weight:500;margin:0}.top-actions{display:flex;align-items:center;gap:10px}.chip{border-radius:18px;background:#242529;color:#d8d9df;padding:8px 12px;font-size:13px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;max-width:480px}.panel h2{font-size:20px;font-weight:500;margin:0 0 8px}
+label{display:block;color:var(--muted);font-size:14px;margin:15px 0 7px}input{width:100%;border:1px solid #55575e;border-radius:8px;background:#111216;color:#fff;padding:12px 13px}
+.primary{border:0;border-radius:22px;background:#9abcf7;color:#14243b;padding:11px 20px;font-weight:600}.secondary{border:1px solid #55575e;border-radius:22px;background:transparent;color:var(--primary-text-color,#e1e2e8);padding:10px 16px}
+#message{color:var(--muted);font-size:14px;line-height:1.5;margin:0 0 14px}.hidden{display:none!important}
+.content-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin:8px 0 18px}.content-head h2{font-size:21px;font-weight:500;margin:0}.content-head p{color:var(--muted);margin:6px 0 0;font-size:14px}
+.search{max-width:320px}.area-section{margin:28px 0 34px}.area-heading{display:flex;align-items:center;gap:10px;margin:0 0 13px;font-size:18px;font-weight:500}.area-heading .count{color:var(--muted);font-size:13px;font-weight:400}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:12px}
+.entity{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:17px;min-height:132px;display:flex;flex-direction:column;justify-content:space-between;gap:16px;transition:border-color .15s}
+.entity:hover{border-color:#6b819f}.entity-top{display:flex;align-items:flex-start;gap:12px}.entity-icon{width:42px;height:42px;flex:0 0 42px;border-radius:50%;background:#303136;display:grid;place-items:center;font-size:20px}.entity-icon.active{background:#4b4328;color:#f6d879}.entity-name{font-size:15px;font-weight:500;line-height:1.35;overflow-wrap:anywhere}.entity-id{font-size:11px;color:var(--muted);margin-top:4px;overflow-wrap:anywhere}
+.entity-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px}.state{font-size:14px;color:#c5c6cc}.state.active{color:#f6d879}.toggle{border:0;border-radius:20px;background:#34363b;color:#e4e5e9;padding:8px 14px;font-size:13px}.toggle:hover{background:#45474e}.toggle.on{background:#344b3b;color:#c1ebc9}
+.empty{border:1px dashed #55575e;border-radius:12px;color:var(--muted);padding:30px;text-align:center;grid-column:1/-1}
+.login-shell{min-height:100vh;display:grid;place-items:center;padding:22px}.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}.login-card{width:min(440px,100%);background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px}
+footer{margin-top:38px;border-top:1px solid #303136;padding-top:16px;display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px}
+@media(max-width:760px){.shell{grid-template-columns:1fr}.sidebar{position:sticky;top:0;z-index:4;border-right:0;border-bottom:1px solid #303136;padding:9px 12px;gap:8px}.ha-brand{padding:0 8px 4px}.nav{display:flex;overflow-x:auto}.nav-title,.side-foot{display:none}.nav button{white-space:nowrap;padding:9px 13px}.nav button .nav-icon{width:auto}.shell main{padding:22px 15px 35px}.topbar{align-items:flex-start}.page-title{font-size:23px}.content-head{align-items:stretch;flex-direction:column}.search{max-width:none}}
 </style></head>
-<body><div class="wrap">
-<header><div class="brand"><div class="logo">⌂</div><div><h1>Willkommen</h1><p class="sub">Dein Zuhause auf einen Blick</p></div></div></header>
-<main class="panel">
-<p id="message" role="status">Bitte melde dich mit deinen Gast-Zugangsdaten an.</p>
-<section id="login">
-<label for="username">Benutzername</label><input id="username" autocomplete="username" maxlength="64">
-<label for="password">Passwort</label><input id="password" type="password" autocomplete="current-password">
-<button id="loginButton" style="width:100%;margin-top:18px">Anmelden</button>
-<div id="otpBox" class="hidden"><label for="otp">Einmalcode</label><input id="otp" inputmode="numeric" maxlength="6"><button id="otpButton" style="width:100%;margin-top:10px">Code bestätigen</button></div>
-</section>
-<section id="portal" class="hidden">
-<div class="statusbar"><span id="mode" class="pill"></span><span id="count" class="pill"></span></div>
-<div class="tools"><input id="filter" type="search" placeholder="Gerät suchen …" aria-label="Geräte suchen"></div>
-<div id="entities" class="grid" style="margin-top:16px"></div>
-<footer><button id="logout" class="secondary">Abmelden</button></footer>
-</section>
-</main></div>
+<body>
+<div id="loginView" class="login-shell">
+ <section class="login-card">
+  <div class="login-brand"><div class="ha-mark">⌂</div><div><div style="font-size:20px;font-weight:600">Home Assistant</div><div class="eyebrow">Gastzugang</div></div></div>
+  <h2 style="font-size:22px;font-weight:500;margin:0 0 8px">Willkommen</h2>
+  <p id="message" role="status">Melde dich mit deinen Gast-Zugangsdaten an.</p>
+  <section id="login">
+   <label for="username">Benutzername</label><input id="username" autocomplete="username" maxlength="64">
+   <label for="password">Passwort</label><input id="password" type="password" autocomplete="current-password">
+   <button id="loginButton" class="primary" style="width:100%;margin-top:20px">Anmelden</button>
+   <div id="otpBox" class="hidden"><label for="otp">Einmalcode</label><input id="otp" inputmode="numeric" maxlength="6"><button id="otpButton" class="primary" style="width:100%;margin-top:12px">Code bestätigen</button></div>
+  </section>
+ </section>
+</div>
+<div id="appView" class="shell hidden">
+ <aside class="sidebar">
+  <div class="ha-brand"><div class="ha-mark">⌂</div><span>Home Assistant</span></div>
+  <div><div class="nav-title">Übersicht</div><nav id="areaNav" class="nav"><button class="active" data-area="all"><span class="nav-icon">⌂</span>Alle Geräte</button></nav></div>
+  <div class="side-foot">Gast-Dashboard</div>
+ </aside>
+ <main>
+  <div class="topbar"><div><div class="eyebrow">Zuhause</div><h1 class="page-title" id="pageTitle">Übersicht</h1></div><div class="top-actions"><span id="mode" class="chip">Gastzugang</span><button id="logout" class="secondary">Abmelden</button></div></div>
+  <div class="content-head"><div><h2 id="sectionTitle">Alle Geräte</h2><p id="summary">Freigegebene Geräte und Sensoren</p></div><input id="filter" class="search" type="search" placeholder="Geräte suchen …" aria-label="Geräte suchen"></div>
+  <div id="sections"></div>
+  <footer><span id="deviceCount"></span><span>Home Assistant Gastportal</span></footer>
+ </main>
+</div>
 <script>
 (() => {
- const base="/api/guest_portal";let token=sessionStorage.getItem("guest_portal_token"),challenge=null,approval=null,poll=null,allEntities=[];
+ const base="/api/guest_portal";let token=sessionStorage.getItem("guest_portal_token"),challenge=null,approval=null,poll=null,allEntities=[],activeArea="all";
  const $=id=>document.getElementById(id),message=t=>$("message").textContent=t;
  const api=async(path,options={})=>{const headers={"Content-Type":"application/json",...(token?{Authorization:"Bearer "+token}:{}),...(options.headers||{})};const r=await fetch(base+path,{...options,headers});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Anfrage fehlgeschlagen");return d};
- const domainIcon=id=>({light:"💡",switch:"🔌",fan:"🌀",climate:"🌡️",cover:"🪟",sensor:"📊",binary_sensor:"◉",media_player:"♫"}[id.split(".")[0]]||"⌂");
- const render=()=>{const query=$("filter").value.trim().toLocaleLowerCase("de");const list=allEntities.filter(e=>(e.name+" "+e.entity_id).toLocaleLowerCase("de").includes(query));$("entities").replaceChildren();$("count").textContent=list.length+" von "+allEntities.length+" Geräten";
- if(!list.length){const empty=document.createElement("div");empty.className="empty";empty.textContent=allEntities.length?"Keine passenden Geräte gefunden.":"Für deinen Zugang sind aktuell keine Geräte freigegeben."; $("entities").append(empty);return}
- for(const e of list){const card=document.createElement("article");card.className="device";const top=document.createElement("div");top.className="device-top";const name=document.createElement("div");const title=document.createElement("div");title.className="device-name";title.textContent=e.name;const id=document.createElement("div");id.className="device-id";id.textContent=e.entity_id;name.append(title,id);const icon=document.createElement("span");icon.textContent=domainIcon(e.entity_id);icon.style.fontSize="1.5rem";top.append(name,icon);card.append(top);
- const state=document.createElement("div");state.className="state";state.textContent=e.state+(e.unit?" ":"");if(e.unit){const unit=document.createElement("small");unit.textContent=e.unit;state.append(unit)}card.append(state);
- if(e.can_control&&["light","switch","fan","homeassistant"].includes(e.entity_id.split(".")[0])){const actions=document.createElement("div");actions.className="actions";const toggle=document.createElement("button");toggle.textContent=["on","open","playing","heat","cool"].includes(e.state.toLowerCase())?"Ausschalten":"Einschalten";toggle.addEventListener("click",async()=>{toggle.disabled=true;try{await api("/control",{method:"POST",body:JSON.stringify({entity_id:e.entity_id,service:"toggle"})});await showPortal()}catch(err){message(err.message);toggle.disabled=false}});actions.append(toggle);card.append(actions)}
- $("entities").append(card)}
+ const iconFor=e=>{const d=e.domain||e.entity_id.split(".")[0],c=e.device_class; if(e.icon)return "✦";if(d==="light")return "💡";if(d==="switch")return "🔌";if(d==="fan")return "🌀";if(d==="climate")return "🌡️";if(d==="cover")return "🪟";if(d==="media_player")return "♫";if(d==="lock")return "🔒";if(d==="camera")return "📷";if(d==="sensor"||d==="binary_sensor"){return ({temperature:"🌡️",humidity:"💧",illuminance:"☀️",motion:"👣",door:"🚪",window:"🪟",battery:"🔋",power:"⚡"})[c]||"◉"}if(d==="weather")return "☁️";return "⌂"};
+ const isOn=e=>["on","open","opening","playing","home","heat","cool","locked","detected"].includes(String(e.state).toLowerCase());
+ const prettyState=e=>{const s=String(e.state);const map={on:"Eingeschaltet",off:"Ausgeschaltet",unavailable:"Nicht verfügbar",unknown:"Unbekannt",open:"Offen",closed:"Geschlossen",home:"Zuhause",not_home:"Abwesend",locked:"Verriegelt",unlocked:"Entriegelt",playing:"Wiedergabe",paused:"Pausiert",idle:"Bereit",detected:"Erkannt",clear:"Keine Erkennung"};return (map[s.toLowerCase()]||s)+(e.unit?" "+e.unit:"")};
+ const areaList=()=>[...new Set(allEntities.map(e=>e.area_name||"Nicht zugewiesen"))].sort((a,b)=>a.localeCompare(b,"de"));
+ const renderNav=()=>{const nav=$("areaNav");nav.replaceChildren();const entries=[{id:"all",name:"Alle Geräte",icon:"⌂"},...areaList().map(name=>({id:name,name,icon:"▦"}))];for(const a of entries){const b=document.createElement("button");b.dataset.area=a.id;b.className=activeArea===a.id?"active":"";const ic=document.createElement("span");ic.className="nav-icon";ic.textContent=a.icon;const label=document.createElement("span");label.textContent=a.name;b.append(ic,label);b.addEventListener("click",()=>{activeArea=a.id;renderNav();render()});nav.append(b)}};
+ const cardFor=e=>{const card=document.createElement("article");card.className="entity";const top=document.createElement("div");top.className="entity-top";const ic=document.createElement("div");ic.className="entity-icon"+(isOn(e)?" active":"");ic.textContent=iconFor(e);const info=document.createElement("div");const name=document.createElement("div");name.className="entity-name";name.textContent=e.name||e.entity_id;const id=document.createElement("div");id.className="entity-id";id.textContent=e.entity_id;info.append(name,id);top.append(ic,info);const bottom=document.createElement("div");bottom.className="entity-bottom";const state=document.createElement("span");state.className="state"+(isOn(e)?" active":"");state.textContent=prettyState(e);bottom.append(state);
+ if(e.can_control&&["light","switch","fan","homeassistant"].includes(e.domain)){const btn=document.createElement("button");btn.className="toggle"+(isOn(e)?" on":"");btn.textContent=isOn(e)?"Ausschalten":"Einschalten";btn.addEventListener("click",async()=>{btn.disabled=true;try{await api("/control",{method:"POST",body:JSON.stringify({entity_id:e.entity_id,service:"toggle"})});await showPortal()}catch(err){message(err.message);btn.disabled=false}});bottom.append(btn)}
+ card.append(top,bottom);return card};
+ const render=()=>{const q=$("filter").value.trim().toLocaleLowerCase("de");let visible=allEntities.filter(e=>(e.name+" "+e.entity_id).toLocaleLowerCase("de").includes(q));if(activeArea!=="all")visible=visible.filter(e=>(e.area_name||"Nicht zugewiesen")===activeArea);$("pageTitle").textContent=activeArea==="all"?"Übersicht":activeArea;$("sectionTitle").textContent=activeArea==="all"?"Alle Geräte":activeArea;$("summary").textContent=visible.length+" freigegebene Geräte und Sensoren";$("deviceCount").textContent=visible.length+" von "+allEntities.length+" Geräten sichtbar";
+ const root=$("sections");root.replaceChildren();const groups=activeArea==="all"?areaList().map(name=>[name,visible.filter(e=>(e.area_name||"Nicht zugewiesen")===name)]):[[activeArea,visible]];
+ if(!visible.length){const empty=document.createElement("div");empty.className="empty";empty.textContent=allEntities.length?"Keine passenden Geräte gefunden.":"Für deinen Gastzugang sind keine Geräte freigegeben.";root.append(empty);return}
+ for(const [area,items] of groups){if(!items.length)continue;const section=document.createElement("section");section.className="area-section";const heading=document.createElement("h2");heading.className="area-heading";heading.textContent=area;const count=document.createElement("span");count.className="count";count.textContent=items.length+" Geräte";heading.append(count);const grid=document.createElement("div");grid.className="cards";items.forEach(e=>grid.append(cardFor(e)));section.append(heading,grid);root.append(section)}
  };
- const showPortal=async()=>{$("login").classList.add("hidden");$("portal").classList.remove("hidden");const d=await api("/states");allEntities=d.entities;$("mode").textContent=d.alone_mode?"● Allein-Modus aktiv":"● Normaler Gastzugriff";render();message("Deine freigegebenen Geräte.");};
+ const showPortal=async()=>{$("loginView").classList.add("hidden");$("appView").classList.remove("hidden");const d=await api("/states");allEntities=d.entities||[];$("mode").textContent=d.alone_mode?"Allein-Modus":"Gastzugang";renderNav();render();};
  const beginPoll=()=>{clearInterval(poll);let count=0;poll=setInterval(async()=>{if(++count>120){clearInterval(poll);message("Freigabe abgelaufen. Bitte erneut anmelden.");return}try{const d=await api("/approval/"+encodeURIComponent(approval));if(d.status==="approved"){clearInterval(poll);token=d.token;sessionStorage.setItem("guest_portal_token",token);await showPortal()}else if(d.status==="rejected"){clearInterval(poll);message("Anmeldung wurde abgelehnt.")}}catch(e){clearInterval(poll);message(e.message)}},3000)};
  $("loginButton").addEventListener("click",async()=>{try{const d=await api("/login",{method:"POST",body:JSON.stringify({username:$("username").value,password:$("password").value})});if(d.status==="otp_required"){challenge=d.challenge_id;$("otpBox").classList.remove("hidden");message("Einmalcode wurde versendet.")}else if(d.status==="approval_required"){approval=d.request_id;message("Warte auf Freigabe durch den Administrator.");beginPoll()}}catch(e){message(e.message)}});
  $("otpButton").addEventListener("click",async()=>{try{const d=await api("/login",{method:"POST",body:JSON.stringify({challenge_id:challenge,otp:$("otp").value})});token=d.token;sessionStorage.setItem("guest_portal_token",token);await showPortal()}catch(e){message(e.message)}});
  $("filter").addEventListener("input",render);
- $("logout").addEventListener("click",async()=>{try{await api("/logout",{method:"POST"})}catch(e){}token=null;sessionStorage.removeItem("guest_portal_token");$("portal").classList.add("hidden");$("login").classList.remove("hidden");message("Du wurdest abgemeldet.")});
+ $("logout").addEventListener("click",async()=>{try{await api("/logout",{method:"POST"})}catch(e){}token=null;sessionStorage.removeItem("guest_portal_token");$("appView").classList.add("hidden");$("loginView").classList.remove("hidden");message("Du wurdest abgemeldet.")});
  if(token)showPortal().catch(()=>{token=null;sessionStorage.removeItem("guest_portal_token")});
 })();
 </script></body></html>
