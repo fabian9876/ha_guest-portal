@@ -217,6 +217,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "entry": entry,
         "storage": storage,
         "access_manager": GuestAccessManager(hass),
+        "audit": storage.data.setdefault("audit", []),
         "alone_mode": False,
         "sessions": {},
         "pending": {},
