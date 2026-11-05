@@ -1,67 +1,284 @@
 <!doctype html>
 <html lang="de">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#101827"><title>Gästeportal</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101820">
+<meta name="color-scheme" content="dark light">
+<title>Gästeportal · Home Assistant</title>
 <style>
-:root{font-family:Roboto,"Helvetica Neue",Arial,sans-serif;color:var(--primary-text-color,#e1e1e1);background:var(--primary-background-color,#111e2c);--surface:var(--card-background-color,#1c2938);--surface2:var(--secondary-background-color,#263747);--line:var(--divider-color,#394b5d);--muted:var(--secondary-text-color,#9aa7b5);--accent:var(--primary-color,#03a9f4);--radius:var(--ha-card-border-radius,12px)}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--primary-background-color,#111e2c);color:var(--primary-text-color,#e1e1e1)}
-.wrap{width:min(1240px,100%);margin:auto;padding:0 28px 42px}.topbar{height:66px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);margin:0 0 32px}.brand-mark{width:38px;height:38px;border-radius:10px;background:var(--accent);color:white;display:grid;place-items:center;font-size:24px}.brand h1{font-size:1rem;font-weight:500;margin:0}.brand p{font-size:.78rem;margin:3px 0 0;color:var(--muted)}
-.welcome-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(330px,470px);gap:clamp(28px,6vw,90px);align-items:center;max-width:1060px;margin:7vh auto 0}.welcome-copy{padding:12px 0}.eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--accent);font-size:.82rem;font-weight:500;letter-spacing:.04em;text-transform:uppercase}.eyebrow:before{content:"";width:18px;height:2px;background:var(--accent)}.welcome-copy h2{font-size:clamp(2rem,5vw,3.35rem);font-weight:300;line-height:1.1;letter-spacing:-.045em;margin:18px 0}.welcome-copy>p{max-width:470px;color:var(--muted);font-size:1rem;line-height:1.7}.feature-list{display:grid;gap:15px;margin-top:30px}.feature{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:.9rem}.feature-icon{width:34px;height:34px;border:1px solid var(--line);border-radius:9px;display:grid;place-items:center;color:var(--accent)}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:clamp(20px,3vw,30px);box-shadow:var(--ha-card-box-shadow,none)}.panel-title{font-size:1.25rem;font-weight:500;margin:0 0 6px}.panel-subtitle{font-size:.87rem;color:var(--muted);margin:0 0 18px}
-label{display:block;color:var(--muted);font-size:.86rem;margin:14px 0 7px}input,button{font:inherit;border-radius:var(--ha-control-border-radius,6px);padding:10px 13px}input{width:100%;min-height:44px;border:1px solid var(--line);background:var(--input-fill-color,rgba(127,127,127,.08));color:var(--primary-text-color,#e1e1e1)}input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-button{min-height:42px;border:0;background:var(--accent);color:white;cursor:pointer;font-weight:500}button:hover{filter:brightness(1.08)}button:disabled{opacity:.5;cursor:wait}.secondary{background:transparent;border:1px solid var(--line);color:var(--primary-text-color,#e1e1e1)}
-.actions{display:flex;gap:9px;flex-wrap:wrap}.actions button{flex:1;min-width:90px}.hidden{display:none!important}
-#message{min-height:22px;margin:0 0 16px;padding:8px 10px;border-radius:6px;background:var(--surface2);color:var(--muted);font-size:.83rem;line-height:1.4}.statusbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:4px 0 18px}.pill{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:6px;background:var(--surface2);color:var(--primary-text-color,#e1e1e1);font-size:.82rem}
-.tools{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.tools input{flex:1;min-width:190px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:12px}
-.device{background:var(--primary-background-color,#111e2c);border:1px solid var(--line);border-radius:var(--radius);padding:16px;min-width:0;transition:border-color .15s}.device:hover{border-color:var(--accent)}.device-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.device-name{font-weight:500;font-size:1rem;overflow-wrap:anywhere}.device-id{font-size:.75rem;color:var(--muted);margin-top:5px;overflow-wrap:anywhere}.device-top>span{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;background:var(--surface2)}
-.state{font-size:1.3rem;font-weight:500;margin:18px 0 14px}.state small{font-size:.85rem;color:var(--muted);font-weight:400}.empty{grid-column:1/-1;border:1px dashed var(--line);border-radius:var(--radius);padding:32px;text-align:center;color:var(--muted)}
-.portal-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px}.portal-heading h2{font-size:1.65rem;font-weight:400;margin:0}.portal-heading p{margin:5px 0 0;color:var(--muted);font-size:.88rem}footer{margin-top:20px;text-align:right}
-@media(max-width:760px){.wrap{padding:0 14px 28px}.topbar{margin-bottom:18px}.welcome-layout{grid-template-columns:1fr;gap:22px;margin:3vh auto 0}.welcome-copy{padding:0}.welcome-copy h2{font-size:2.2rem;margin:12px 0}.feature-list{display:none}.panel{padding:18px}.portal-heading h2{font-size:1.4rem}}
-</style></head>
-<body><div class="wrap">
-<header class="topbar"><div class="brand-mark">⌂</div><div class="brand"><h1>Home Assistant</h1><p>Gastportal</p></div></header>
-<main class="welcome-layout"><aside class="welcome-copy"><span class="eyebrow">Willkommen zuhause</span><h2>Dein Zuhause.<br>Auf einen Blick.</h2><p>Melde dich an, um die Geräte und Funktionen zu nutzen, die für deinen Gastzugang freigegeben wurden.</p><div class="feature-list"><div class="feature"><span class="feature-icon">⌂</span><span>Freigegebene Geräte zentral im Blick</span></div><div class="feature"><span class="feature-icon">◉</span><span>Persönlicher und geschützter Zugang</span></div><div class="feature"><span class="feature-icon">✓</span><span>Nur die Berechtigungen, die dir zugewiesen wurden</span></div></div></aside>
-<section class="panel"><section id="login"><h2 class="panel-title">Anmelden</h2><p class="panel-subtitle">Nutze deine Gast-Zugangsdaten.</p><p id="message" role="status">Bitte melde dich mit deinen Gast-Zugangsdaten an.</p>
-<label for="username">Benutzername</label><input id="username" autocomplete="username" maxlength="64">
-<label for="password">Passwort</label><input id="password" type="password" autocomplete="current-password">
-<button id="loginButton" style="width:100%;margin-top:18px">Anmelden</button>
-<div id="otpBox" class="hidden"><label for="otp">Einmalcode</label><input id="otp" inputmode="numeric" maxlength="6"><button id="otpButton" style="width:100%;margin-top:10px">Code bestätigen</button></div>
-</section>
-<section id="portal" class="hidden">
-<div class="portal-heading"><div><h2>Deine Geräte</h2><p>Dein freigegebener Bereich</p></div></div>
-<div class="statusbar"><span id="mode" class="pill"></span><span id="count" class="pill"></span></div>
-<div class="tools"><input id="filter" type="search" placeholder="Gerät suchen …" aria-label="Geräte suchen"></div>
-<div id="entities" class="grid" style="margin-top:16px"></div>
-<footer><button id="logout" class="secondary">Abmelden</button></footer>
-</section>
-</section>
-</main></div>
+:root{
+ color-scheme:dark;
+ font-family:Roboto,"Segoe UI",Arial,sans-serif;
+ --page:#101820;--surface:#18232d;--surface-raised:#202e3a;--surface-soft:#243440;
+ --line:#344653;--text:#edf3f6;--muted:#9eafb9;--accent:#8fc8ff;--accent-strong:#b7ddff;
+ --accent-ink:#102333;--success:#9bd7b0;--warning:#f2ce87;--danger:#ffaaa2;
+ --shadow:0 16px 44px rgba(0,0,0,.18);--radius:18px;
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 85% -10%,rgba(67,131,166,.16),transparent 34%),var(--page);color:var(--text)}
+button,input{font:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+button:disabled{opacity:.55;cursor:wait}
+.hidden{display:none!important}
+.app-shell{min-height:100vh}
+.header{height:76px;border-bottom:1px solid rgba(160,190,205,.14);display:flex;align-items:center;gap:13px;padding:0 clamp(18px,4vw,58px);background:rgba(16,24,32,.76);backdrop-filter:blur(16px);position:sticky;top:0;z-index:5}
+.brand-mark{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(145deg,#8fc8ff,#4d91c5);color:#102333;font-size:25px;font-weight:700;box-shadow:0 5px 18px rgba(80,153,205,.2)}
+.brand-title{font-weight:650;letter-spacing:.01em;font-size:15px}.brand-subtitle{font-size:12px;color:var(--muted);margin-top:3px}
+.header-spacer{flex:1}
+.connection{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:30px;padding:8px 12px;color:var(--muted);font-size:12px}
+.connection-dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 0 4px rgba(155,215,176,.1)}
+main{width:min(1320px,100%);margin:0 auto;padding:clamp(24px,4vw,48px) clamp(16px,4vw,48px) 52px}
+.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:28px}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-size:clamp(30px,4vw,43px);letter-spacing:-.045em;line-height:1.08;font-weight:550;margin:10px 0 9px}
+.hero-copy{color:var(--muted);font-size:14px;line-height:1.6;margin:0;max-width:580px}
+.hero-actions{display:flex;align-items:center;gap:9px;flex-shrink:0}
+.button{border:1px solid var(--line);border-radius:12px;background:var(--surface-raised);color:var(--text);padding:10px 14px;min-height:42px;font-weight:600;font-size:13px;transition:background .16s,border-color .16s,transform .16s}
+.button:hover{background:var(--surface-soft);border-color:#607b8b}
+.button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.button.primary:hover{background:var(--accent-strong)}
+.button.subtle{background:transparent}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 26px}
+.stat{background:linear-gradient(145deg,rgba(32,46,58,.94),rgba(24,35,45,.94));border:1px solid var(--line);border-radius:16px;padding:17px 19px;min-width:0}
+.stat-top{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--muted);font-size:12px}
+.stat-icon{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:var(--surface-soft);font-size:15px}
+.stat-value{font-size:27px;letter-spacing:-.04em;font-weight:650;margin-top:8px}
+.stat-note{font-size:11px;color:var(--muted);margin-top:3px}
+.toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.search-wrap{position:relative;flex:1;min-width:210px;max-width:440px}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;pointer-events:none}
+.search{width:100%;height:44px;border-radius:13px;border:1px solid var(--line);background:var(--surface);color:var(--text);padding:0 14px 0 40px}
+.search::placeholder{color:#8295a1}
+.filters{display:flex;gap:7px;flex-wrap:wrap}
+.filter{border:1px solid var(--line);border-radius:30px;background:transparent;color:var(--muted);padding:9px 13px;font-size:12px;font-weight:600}
+.filter:hover{color:var(--text);border-color:#607b8b}
+.filter.active{background:var(--surface-soft);color:var(--accent-strong);border-color:#547b99}
+.status-message{display:flex;align-items:center;gap:10px;min-height:42px;padding:10px 13px;margin:0 0 18px;border-radius:12px;background:rgba(143,200,255,.08);border:1px solid rgba(143,200,255,.18);color:#c4dff2;font-size:13px;line-height:1.4}
+.status-message.error{background:rgba(255,170,162,.08);border-color:rgba(255,170,162,.24);color:var(--danger)}
+.status-message.success{background:rgba(155,215,176,.08);border-color:rgba(155,215,176,.2);color:var(--success)}
+.section{margin:26px 0 34px}
+.section-heading{display:flex;align-items:center;gap:10px;margin:0 0 13px;font-size:16px;font-weight:650;letter-spacing:-.01em}
+.section-heading:before{content:"";width:4px;height:17px;border-radius:4px;background:var(--accent)}
+.section-count{font-size:11px;color:var(--muted);font-weight:500;border:1px solid var(--line);border-radius:20px;padding:4px 8px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,245px),1fr));gap:12px}
+.entity-card{min-width:0;border:1px solid var(--line);border-radius:16px;background:linear-gradient(155deg,rgba(31,46,58,.94),rgba(24,35,45,.98));padding:16px;display:flex;flex-direction:column;gap:17px;transition:transform .16s,border-color .16s,box-shadow .16s}
+.entity-card:hover{transform:translateY(-2px);border-color:#5b788c;box-shadow:var(--shadow)}
+.entity-top{display:flex;align-items:flex-start;gap:12px;min-width:0}
+.entity-icon{width:42px;height:42px;flex:0 0 42px;border-radius:13px;display:grid;place-items:center;background:var(--surface-soft);font-size:19px}
+.entity-icon.active{background:rgba(242,206,135,.13)}
+.entity-meta{min-width:0;flex:1}
+.entity-name{font-size:14px;font-weight:650;line-height:1.4;overflow-wrap:anywhere}
+.entity-id{font-size:10px;color:var(--muted);margin-top:4px;overflow-wrap:anywhere}
+.entity-bottom{display:flex;align-items:center;justify-content:space-between;gap:9px}
+.state{font-size:12px;color:#c5d0d6;line-height:1.4;overflow-wrap:anywhere}
+.state.active{color:var(--warning)}
+.state.unavailable{color:var(--muted)}
+.unit{color:var(--muted)}
+.toggle{border:1px solid #496175;border-radius:10px;background:rgba(143,200,255,.1);color:var(--accent-strong);padding:8px 11px;font-size:11px;font-weight:700;white-space:nowrap}
+.toggle:hover{background:rgba(143,200,255,.2)}
+.toggle.off{border-color:var(--line);background:var(--surface-soft);color:var(--text)}
+.empty{grid-column:1/-1;text-align:center;border:1px dashed #526775;border-radius:16px;padding:44px 20px;color:var(--muted);background:rgba(24,35,45,.5)}
+.empty strong{display:block;color:var(--text);font-size:15px;margin-bottom:6px}
+.empty p{margin:0;font-size:13px}
+.footer{border-top:1px solid rgba(160,190,205,.14);padding-top:17px;margin-top:44px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:11px}
+.login-shell{min-height:calc(100vh - 76px);display:grid;place-items:center;padding:28px 16px 50px}
+.login-card{width:min(450px,100%);border:1px solid var(--line);border-radius:22px;padding:clamp(24px,5vw,38px);background:linear-gradient(150deg,rgba(32,46,58,.98),rgba(24,35,45,.98));box-shadow:var(--shadow)}
+.login-mark{width:54px;height:54px;border-radius:17px;display:grid;place-items:center;background:linear-gradient(145deg,#8fc8ff,#4d91c5);color:#102333;font-size:31px;margin-bottom:23px}
+.login-card h1{font-size:28px;margin:8px 0}
+.login-description{color:var(--muted);font-size:13px;line-height:1.6;margin:0 0 24px}
+.field{margin:15px 0}
+.field label{display:block;font-size:12px;color:#c0cdd4;font-weight:600;margin:0 0 7px}
+.field input{width:100%;height:46px;border-radius:11px;border:1px solid var(--line);background:#111a22;color:var(--text);padding:0 13px}
+.login-card .button{width:100%;margin-top:9px;min-height:46px}
+.login-hint{margin:18px 0 0;color:var(--muted);font-size:11px;line-height:1.5;text-align:center}
+@media(max-width:720px){
+ .header{height:66px;padding:0 16px}.connection{font-size:0;padding:9px}.connection-dot{width:8px;height:8px}
+ main{padding-top:28px}.hero{display:block}.hero-actions{margin-top:18px}.stats{gap:8px}.stat{padding:13px}.stat-value{font-size:23px}.stat-note{font-size:10px}
+ .toolbar{align-items:stretch}.search-wrap{max-width:none;flex-basis:100%}.filters{flex-wrap:nowrap;overflow-x:auto;padding-bottom:5px}.filter{white-space:nowrap}
+ .cards{grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))}
+}
+@media(max-width:440px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}.stat-top{font-size:10px}.stat-icon{display:none}.stat-value{font-size:21px}.entity-card{padding:14px}.hero-actions .button{flex:1}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="header">
+ <div class="brand-mark" aria-hidden="true">⌂</div>
+ <div><div class="brand-title">Home Assistant</div><div class="brand-subtitle">Persönlicher Gastzugang</div></div>
+ <span class="header-spacer"></span>
+ <div class="connection" id="connection"><span class="connection-dot"></span><span id="connectionText">Sicherer Gastzugang</span></div>
+</header>
+<div id="loginView" class="login-shell">
+ <section class="login-card">
+  <div class="login-mark" aria-hidden="true">⌂</div>
+  <div class="eyebrow">Willkommen</div>
+  <h1>Schön, dass du da bist.</h1>
+  <p class="login-description">Melde dich mit deinen persönlichen Gast-Zugangsdaten an. Du siehst anschließend nur die Geräte und Funktionen, die für dich freigegeben wurden.</p>
+  <p id="loginMessage" class="status-message" role="status" aria-live="polite">Bitte gib deine Zugangsdaten ein.</p>
+  <form id="loginForm">
+   <div class="field"><label for="username">Benutzername</label><input id="username" autocomplete="username" maxlength="64" required></div>
+   <div class="field"><label for="password">Passwort</label><input id="password" type="password" autocomplete="current-password" required></div>
+   <button id="loginButton" class="button primary" type="submit">Anmelden</button>
+  </form>
+  <div id="otpBox" class="hidden">
+   <div class="field"><label for="otp">Einmalcode</label><input id="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}"></div>
+   <button id="otpButton" class="button primary" type="button">Code bestätigen</button>
+  </div>
+  <p class="login-hint">Dein Gastzugang ist auf die vom Gastgeber freigegebenen Bereiche beschränkt.</p>
+ </section>
+</div>
+<div id="appView" class="app-shell hidden">
+ <main>
+  <section class="hero">
+   <div><div class="eyebrow">Dein Zuhause auf einen Blick</div><h1>Alles im Überblick.</h1><p class="hero-copy">Hier findest du die Geräte und Informationen, die für deinen Gastzugang freigegeben sind.</p></div>
+   <div class="hero-actions"><button id="refresh" class="button" type="button">↻ Aktualisieren</button><button id="logout" class="button subtle" type="button">Abmelden</button></div>
+  </section>
+  <section class="stats" aria-label="Übersicht">
+   <article class="stat"><div class="stat-top"><span>Freigegebene Geräte</span><span class="stat-icon">⌂</span></div><div class="stat-value" id="totalCount">–</div><div class="stat-note">In deinem Gastbereich</div></article>
+   <article class="stat"><div class="stat-top"><span>Steuerbar</span><span class="stat-icon">◉</span></div><div class="stat-value" id="controlCount">–</div><div class="stat-note">Mit aktiver Bedienfreigabe</div></article>
+   <article class="stat"><div class="stat-top"><span>Zugriffsmodus</span><span class="stat-icon">⌑</span></div><div class="stat-value" id="modeValue" style="font-size:18px;margin-top:13px">Gast</div><div class="stat-note" id="modeNote">Persönliche Freigaben</div></article>
+  </section>
+  <div id="appMessage" class="status-message hidden" role="status" aria-live="polite"></div>
+  <section class="toolbar" aria-label="Geräte filtern">
+   <div class="search-wrap"><span class="search-icon" aria-hidden="true">⌕</span><input id="filter" class="search" type="search" placeholder="Gerät oder Sensor suchen …" aria-label="Geräte suchen"></div>
+   <div id="filters" class="filters"></div>
+  </section>
+  <div id="sections" aria-live="polite"></div>
+  <footer class="footer"><span id="deviceCount">Dein persönlicher Gastbereich</span><span id="lastUpdated">Home Assistant · Gastportal</span></footer>
+ </main>
+</div>
 <script>
 (() => {
- const base="/api/guest_portal";let token=sessionStorage.getItem("guest_portal_token"),challenge=null,approval=null,poll=null,allEntities=[];
- const $=id=>document.getElementById(id),message=t=>$("message").textContent=t;
- const api=async(path,options={})=>{const headers={"Content-Type":"application/json",...(token?{Authorization:"Bearer "+token}:{}),...(options.headers||{})};const r=await fetch(base+path,{...options,headers});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Anfrage fehlgeschlagen");return d};
- const domainIcon=id=>({light:"💡",switch:"🔌",fan:"🌀",climate:"🌡️",cover:"🪟",sensor:"📊",binary_sensor:"◉",media_player:"♫"}[id.split(".")[0]]||"⌂");
- const render=()=>{const query=$("filter").value.trim().toLocaleLowerCase("de");const list=allEntities.filter(e=>(e.name+" "+e.entity_id).toLocaleLowerCase("de").includes(query));$("entities").replaceChildren();$("count").textContent=list.length+" von "+allEntities.length+" Geräten";
- if(!list.length){const empty=document.createElement("div");empty.className="empty";empty.textContent=allEntities.length?"Keine passenden Geräte gefunden.":"Für deinen Zugang sind aktuell keine Geräte freigegeben."; $("entities").append(empty);return}
- for(const e of list){const card=document.createElement("article");card.className="device";const top=document.createElement("div");top.className="device-top";const name=document.createElement("div");const title=document.createElement("div");title.className="device-name";title.textContent=e.name;const id=document.createElement("div");id.className="device-id";id.textContent=e.entity_id;name.append(title,id);const icon=document.createElement("span");icon.textContent=domainIcon(e.entity_id);icon.style.fontSize="1.5rem";top.append(name,icon);card.append(top);
- const state=document.createElement("div");state.className="state";state.textContent=e.state+(e.unit?" ":"");if(e.unit){const unit=document.createElement("small");unit.textContent=e.unit;state.append(unit)}card.append(state);
- if(e.can_control&&["light","switch","fan","homeassistant"].includes(e.entity_id.split(".")[0])){const actions=document.createElement("div");actions.className="actions";const toggle=document.createElement("button");toggle.textContent=["on","open","playing","heat","cool"].includes(e.state.toLowerCase())?"Ausschalten":"Einschalten";toggle.addEventListener("click",async()=>{toggle.disabled=true;try{await api("/control",{method:"POST",body:JSON.stringify({entity_id:e.entity_id,service:"toggle"})});await showPortal()}catch(err){message(err.message);toggle.disabled=false}});actions.append(toggle);card.append(actions)}
- $("entities").append(card)}
+ "use strict";
+ const base="/api/guest_portal";
+ let token=sessionStorage.getItem("guest_portal_token"),challenge=null,approval=null,poll=null,allEntities=[],activeDomain="all",busy=false;
+ const $=id=>document.getElementById(id);
+ const domains={light:["Beleuchtung","💡"],switch:["Schalter","🔌"],fan:["Lüfter","🌀"],climate:["Klima","🌡️"],cover:["Rollläden & Fenster","▤"],sensor:["Sensoren","◉"],binary_sensor:["Statussensoren","⌁"],media_player:["Medien","♫"],lock:["Schlösser","▣"],camera:["Kameras","▧"],weather:["Wetter","☁"],scene:["Szenen","✦"],automation:["Automationen","⚙"],input_boolean:["Schalter","◉"],number:["Regler","☷"],select:["Auswahl","☷"],button:["Taster","●"],vacuum:["Reinigung","◌"],water_heater:["Warmwasser","♨"]};
+ const api=async(path,options={})=>{
+  const headers={"Content-Type":"application/json",...(token?{Authorization:"Bearer "+token}:{}),...(options.headers||{})};
+  const response=await fetch(base+path,{...options,headers});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok){const error=new Error(data.error||"Die Anfrage konnte nicht ausgeführt werden.");error.status=response.status;throw error}
+  return data;
  };
- const showPortal=async()=>{$("login").classList.add("hidden");$("portal").classList.remove("hidden");const d=await api("/states");allEntities=d.entities;$("mode").textContent=d.alone_mode?"● Allein-Modus aktiv":"● Normaler Gastzugriff";render();message("Deine freigegebenen Geräte.");};
- const beginPoll=()=>{clearInterval(poll);let count=0;poll=setInterval(async()=>{if(++count>120){clearInterval(poll);message("Freigabe abgelaufen. Bitte erneut anmelden.");return}try{const d=await api("/approval/"+encodeURIComponent(approval));if(d.status==="approved"){clearInterval(poll);token=d.token;sessionStorage.setItem("guest_portal_token",token);await showPortal()}else if(d.status==="rejected"){clearInterval(poll);message("Anmeldung wurde abgelehnt.")}}catch(e){clearInterval(poll);message(e.message)}},3000)};
- $("loginButton").addEventListener("click",async()=>{try{const d=await api("/login",{method:"POST",body:JSON.stringify({username:$("username").value,password:$("password").value})});if(d.status==="otp_required"){challenge=d.challenge_id;$("otpBox").classList.remove("hidden");message("Einmalcode wurde versendet.")}else if(d.status==="approval_required"){approval=d.request_id;message("Warte auf Freigabe durch den Administrator.");beginPoll()}}catch(e){message(e.message)}});
- $("otpButton").addEventListener("click",async()=>{try{const d=await api("/login",{method:"POST",body:JSON.stringify({challenge_id:challenge,otp:$("otp").value})});token=d.token;sessionStorage.setItem("guest_portal_token",token);await showPortal()}catch(e){message(e.message)}});
+ const setMessage=(target,text,type="info")=>{const el=$(target);el.textContent=text;el.className="status-message"+(type==="error"?" error":type==="success"?" success":"");el.classList.remove("hidden")};
+ const clearMessage=target=>$(target).classList.add("hidden");
+ const domainOf=e=>e.entity_id.split(".",1)[0];
+ const domainLabel=d=>domains[d]||[d.replaceAll("_"," ").replace(/^./,c=>c.toUpperCase()),"⌂"];
+ const isActive=e=>["on","open","opening","playing","home","heat","cool","locked","detected","cleaning"].includes(String(e.state).toLowerCase());
+ const stateLabel=e=>{
+  const s=String(e.state),labels={on:"Eingeschaltet",off:"Ausgeschaltet",unavailable:"Nicht verfügbar",unknown:"Unbekannt",open:"Offen",closed:"Geschlossen",opening:"Öffnet",closing:"Schließt",home:"Zuhause",not_home:"Abwesend",locked:"Verriegelt",unlocked:"Entriegelt",playing:"Wiedergabe",paused:"Pausiert",idle:"Bereit",detected:"Erkannt",clear:"Keine Erkennung",heat:"Heizen",cool:"Kühlen",auto:"Automatik",dry:"Entfeuchten",fan_only:"Nur Lüfter",cleaning:"Reinigung",docked:"An Station",returning:"Kehrt zurück"};
+  return (labels[s.toLowerCase()]||s)+(e.unit?" "+e.unit:"");
+ };
+ const iconFor=e=>{
+  const d=domainOf(e),s=String(e.state).toLowerCase();
+  if(d==="sensor"||d==="binary_sensor"){
+   const c=e.device_class||"";
+   const icons={temperature:"🌡️",humidity:"💧",illuminance:"☀️",motion:"👣",door:"🚪",window:"🪟",battery:"🔋",power:"⚡",energy:"⚡",pressure:"◉",connectivity:"⌁",occupancy:"⌂",smoke:"♨",moisture:"💧",presence:"⌂"};
+   return icons[c]||domainLabel(d)[1];
+  }
+  return domainLabel(d)[1];
+ };
+ const showLogin=message=>{
+  clearInterval(poll);token=null;sessionStorage.removeItem("guest_portal_token");
+  $("appView").classList.add("hidden");$("loginView").classList.remove("hidden");
+  $("loginForm").reset();$("otpBox").classList.add("hidden");
+  $("connectionText").textContent="Anmeldung erforderlich";
+  if(message)setMessage("loginMessage",message,"error");
+ };
+ const renderFilters=()=>{
+  const counts={};allEntities.forEach(e=>counts[domainOf(e)]=(counts[domainOf(e)]||0)+1);
+  const filters=$("filters");filters.replaceChildren();
+  const options=[["all","Alle",allEntities.length],...Object.keys(counts).sort((a,b)=>domainLabel(a)[0].localeCompare(domainLabel(b)[0],"de")).map(d=>[d,domainLabel(d)[0],counts[d]])];
+  for(const [id,label,count] of options){const b=document.createElement("button");b.type="button";b.className="filter"+(activeDomain===id?" active":"");b.textContent=label+" · "+count;b.setAttribute("aria-pressed",String(activeDomain===id));b.addEventListener("click",()=>{activeDomain=id;renderFilters();render()});filters.append(b)}
+ };
+ const cardFor=e=>{
+  const card=document.createElement("article");card.className="entity-card";
+  const top=document.createElement("div");top.className="entity-top";
+  const icon=document.createElement("div");icon.className="entity-icon"+(isActive(e)?" active":"");icon.textContent=iconFor(e);icon.setAttribute("aria-hidden","true");
+  const meta=document.createElement("div");meta.className="entity-meta";
+  const name=document.createElement("div");name.className="entity-name";name.textContent=e.name||e.entity_id;
+  const id=document.createElement("div");id.className="entity-id";id.textContent=e.entity_id;meta.append(name,id);top.append(icon,meta);
+  const bottom=document.createElement("div");bottom.className="entity-bottom";
+  const state=document.createElement("span");state.className="state"+(isActive(e)?" active":"")+(["unknown","unavailable"].includes(String(e.state).toLowerCase())?" unavailable":"");state.textContent=stateLabel(e);bottom.append(state);
+  if(e.can_control&&["light","switch","fan","homeassistant"].includes(domainOf(e))){
+   const on=isActive(e),btn=document.createElement("button");btn.type="button";btn.className="toggle"+(on?"":" off");btn.textContent=on?"Ausschalten":"Einschalten";btn.setAttribute("aria-label",(on?"Ausschalten: ":"Einschalten: ")+(e.name||e.entity_id));
+   btn.addEventListener("click",async()=>{
+    if(btn.disabled)return;btn.disabled=true;const old=btn.textContent;btn.textContent="…";
+    try{await api("/control",{method:"POST",body:JSON.stringify({entity_id:e.entity_id,service:on?"turn_off":"turn_on"})});await loadEntities(false);setMessage("appMessage",(e.name||e.entity_id)+" wurde aktualisiert.","success")}
+    catch(error){btn.disabled=false;btn.textContent=old;if(error.status===401){showLogin("Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.");return}setMessage("appMessage",error.message,"error")}
+   });bottom.append(btn);
+  }
+  card.append(top,bottom);return card;
+ };
+ const render=()=>{
+  const query=$("filter").value.trim().toLocaleLowerCase("de");
+  const visible=allEntities.filter(e=>(activeDomain==="all"||domainOf(e)===activeDomain)&&((e.name||"")+" "+e.entity_id+" "+e.state).toLocaleLowerCase("de").includes(query));
+  $("totalCount").textContent=allEntities.length;
+  $("controlCount").textContent=allEntities.filter(e=>e.can_control).length;
+  $("deviceCount").textContent=visible.length+" von "+allEntities.length+" Einträgen angezeigt";
+  const root=$("sections");root.replaceChildren();
+  if(!visible.length){const empty=document.createElement("div");empty.className="empty";const strong=document.createElement("strong");strong.textContent=allEntities.length?"Keine Treffer":"Noch keine Geräte freigegeben";const p=document.createElement("p");p.textContent=allEntities.length?"Passe den Suchbegriff oder den gewählten Filter an.":"Dein Gastgeber hat für diesen Zugang noch keine Geräte freigegeben.";empty.append(strong,p);root.append(empty);return}
+  const groups={};visible.forEach(e=>{const d=domainOf(e);(groups[d]||(groups[d]=[])).push(e)});
+  Object.keys(groups).sort((a,b)=>domainLabel(a)[0].localeCompare(domainLabel(b)[0],"de")).forEach(d=>{
+   const section=document.createElement("section");section.className="section";
+   const heading=document.createElement("h2");heading.className="section-heading";heading.textContent=domainLabel(d)[0];
+   const count=document.createElement("span");count.className="section-count";count.textContent=groups[d].length+" "+(groups[d].length===1?"Eintrag":"Einträge");heading.append(count);
+   const cards=document.createElement("div");cards.className="cards";groups[d].forEach(e=>cards.append(cardFor(e)));section.append(heading,cards);root.append(section);
+  });
+ };
+ const loadEntities=async(showLoading=true)=>{
+  if(showLoading){$("refresh").disabled=true;$("refresh").textContent="Lädt …"}
+  try{
+   const data=await api("/states");allEntities=Array.isArray(data.entities)?data.entities:[];
+   $("modeValue").textContent=data.alone_mode?"Allein-Modus":"Standard";
+   $("modeNote").textContent=data.alone_mode?"Zusätzliche Freigaben aktiv":"Persönliche Freigaben";
+   $("connectionText").textContent="Gastzugang aktiv";
+   renderFilters();render();
+   $("lastUpdated").textContent="Aktualisiert um "+new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
+   clearMessage("appMessage");
+  }catch(error){if(error.status===401){showLogin("Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.");return}setMessage("appMessage",error.message,"error")}
+  finally{$("refresh").disabled=false;$("refresh").textContent="↻ Aktualisieren"}
+ };
+ const beginPoll=()=>{
+  clearInterval(poll);let attempts=0;const button=$("loginButton");button.disabled=true;
+  setMessage("loginMessage","Deine Anmeldung wartet auf die Freigabe durch den Gastgeber. Diese Seite prüft den Status automatisch.");
+  poll=setInterval(async()=>{
+   if(++attempts>120){clearInterval(poll);button.disabled=false;setMessage("loginMessage","Die Freigabe ist abgelaufen. Bitte melde dich erneut an.","error");return}
+   try{const data=await api("/approval/"+encodeURIComponent(approval));if(data.status==="approved"){clearInterval(poll);token=data.token;sessionStorage.setItem("guest_portal_token",token);button.disabled=false;$("loginView").classList.add("hidden");$("appView").classList.remove("hidden");await loadEntities()}else if(data.status==="rejected"){clearInterval(poll);button.disabled=false;setMessage("loginMessage","Die Anmeldung wurde vom Gastgeber abgelehnt.","error")}}
+   catch(error){clearInterval(poll);button.disabled=false;setMessage("loginMessage",error.message,"error")}
+  },3000);
+ };
+ $("loginForm").addEventListener("submit",async event=>{
+  event.preventDefault();const button=$("loginButton");if(button.disabled)return;button.disabled=true;button.textContent="Anmeldung läuft …";
+  try{const data=await api("/login",{method:"POST",body:JSON.stringify({username:$("username").value.trim(),password:$("password").value})});
+   if(data.status==="otp_required"){challenge=data.challenge_id;$("otpBox").classList.remove("hidden");setMessage("loginMessage","Ein Einmalcode wurde an den hinterlegten Benachrichtigungskanal gesendet.");$("otp").focus();button.disabled=false}
+   else if(data.status==="approval_required"){approval=data.request_id;beginPoll()}
+   else if(data.token){token=data.token;sessionStorage.setItem("guest_portal_token",token);$("loginView").classList.add("hidden");$("appView").classList.remove("hidden");await loadEntities()}
+   else{throw new Error("Unerwartete Antwort des Gastportals.")}
+  }catch(error){button.disabled=false;setMessage("loginMessage",error.message,"error")}
+  finally{button.textContent="Anmelden"}
+ });
+ $("otpButton").addEventListener("click",async()=>{
+  const button=$("otpButton");button.disabled=true;button.textContent="Prüfe Code …";
+  try{const data=await api("/login",{method:"POST",body:JSON.stringify({challenge_id:challenge,otp:$("otp").value.trim()})});token=data.token;sessionStorage.setItem("guest_portal_token",token);$("loginView").classList.add("hidden");$("appView").classList.remove("hidden");await loadEntities()}
+  catch(error){setMessage("loginMessage",error.message,"error")}
+  finally{button.disabled=false;button.textContent="Code bestätigen"}
+ });
  $("filter").addEventListener("input",render);
- $("logout").addEventListener("click",async()=>{try{await api("/logout",{method:"POST"})}catch(e){}token=null;sessionStorage.removeItem("guest_portal_token");$("portal").classList.add("hidden");$("login").classList.remove("hidden");message("Du wurdest abgemeldet.")});
+ $("refresh").addEventListener("click",()=>loadEntities(true));
+ $("logout").addEventListener("click",async()=>{try{await api("/logout",{method:"POST"})}catch(error){}showLogin("Du wurdest sicher abgemeldet.")});
  const qrAccess=new URLSearchParams(location.hash.slice(1)).get("access");
  if(qrAccess){
   history.replaceState(null,"",location.pathname+location.search);
+  $("loginView").classList.add("hidden");setMessage("loginMessage","Dein QR-Gastzugang wird geprüft.");
   api("/qr-login",{method:"POST",body:JSON.stringify({access_token:qrAccess})})
-   .then(d=>{token=d.token;sessionStorage.setItem("guest_portal_token",token);return showPortal()})
-   .catch(e=>{token=null;sessionStorage.removeItem("guest_portal_token");message(e.message)});
- }else if(token)showPortal().catch(()=>{token=null;sessionStorage.removeItem("guest_portal_token")});
+   .then(data=>{token=data.token;sessionStorage.setItem("guest_portal_token",token);$("appView").classList.remove("hidden");return loadEntities()})
+   .catch(error=>{showLogin(error.message)});
+ }else if(token){$("loginView").classList.add("hidden");$("appView").classList.remove("hidden");loadEntities().catch(()=>showLogin("Bitte melde dich erneut an."))}
 })();
-</script></body></html>
+</script>
+</body>
+</html>
