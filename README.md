@@ -1,6 +1,29 @@
 # HA Guest Portal
 
-A Home Assistant custom integration for a controlled guest portal. Version 0.4.0 adds native sidebar entries for the guest portal and administrator dashboard.
+<p align="center">
+  <img src="docs/assets/guest-portal-icon.svg" width="120" alt="HA Guest Portal icon">
+</p>
+
+<p align="center">
+  <strong>Ein aufgeräumter, kontrollierter Gastzugang für Home Assistant.</strong><br>
+  Geräte nach Bereichen gruppieren, Berechtigungen gezielt vergeben und Gastkonten zentral verwalten.
+</p>
+
+<p align="center">
+  <img src="docs/assets/guest-dashboard-preview.svg" width="49%" alt="Vorschau des Gäste-Dashboards">
+  <img src="docs/assets/admin-dashboard-preview.svg" width="49%" alt="Vorschau der Gastverwaltung">
+</p>
+
+> **Hinweis zu den Bildern:** Das sind gestaltete UI-Vorschauen zur Darstellung des geplanten Looks, keine unbearbeitet aufgenommenen Screenshots aus einer laufenden Home-Assistant-Instanz.
+
+## Highlights
+
+- Home-Assistant-inspirierte Navigation und dunkles Kartenlayout.
+- Gast-Dashboard mit automatischer Gruppierung nach Home-Assistant-Bereichen.
+- Gerätekarten mit Status, Symbolen und erlaubten Steuerelementen.
+- Separate Gastverwaltung mit granularen Lese- und Steuerrechten.
+- Responsive Darstellung für Desktop und Smartphone.
+- Getrennte Anmeldung für Gäste; Berechtigungen werden serverseitig geprüft.
 
 ## Features in 0.4.0
 
