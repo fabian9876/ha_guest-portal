@@ -310,3 +310,145 @@ class GuestPortalPageView(HomeAssistantView):
     async def get(self, request: web.Request) -> web.Response:
         page = Path(__file__).parent / "www" / "index.html"
         return web.Response(text=page.read_text(encoding="utf-8"), content_type="text/html")
+
+
+class GuestAdminApiView(HomeAssistantView):
+    """Administrator-only API for guest and approval management."""
+
+    url = "/api/guest_portal/admin"
+    name = "api:guest_portal:admin"
+    requires_auth = True
+
+    @staticmethod
+    def _is_admin(request: web.Request) -> bool:
+        user = request.get("hass_user")
+        return bool(user and user.is_admin)
+
+    async def get(self, request: web.Request) -> web.Response:
+        if not self._is_admin(request):
+            return _json_error("Administrator access required.", 403)
+        data = _active_entry_data(self.hass)
+        if data is None:
+            return _json_error("Guest Portal is not configured.", 503)
+        guests = [
+            {
+                "guest_id": guest["guest_id"],
+                "username": guest["username"],
+                "enabled": guest.get("enabled", True),
+                "read_entities": guest.get("read_entities", []),
+                "write_entities": guest.get("write_entities", []),
+                "alone_entities": guest.get("alone_entities", []),
+                "alone_write_entities": guest.get("alone_write_entities", []),
+            }
+            for guest in data["storage"].data["guests"].values()
+        ]
+        now = time.time()
+        pending = [
+            {
+                "request_id": request_id,
+                "username": data["storage"].data["guests"].get(item["guest_id"], {}).get("username", "unknown"),
+                "expires": int(item["expires"]),
+            }
+            for request_id, item in data["pending"].items()
+            if item["status"] == "pending" and item["expires"] > now
+        ]
+        return web.json_response({
+            "guests": guests,
+            "pending": pending,
+            "entities": sorted(state.entity_id for state in self.hass.states.async_all()),
+            "alone_mode": data["alone_mode"],
+        })
+
+    async def post(self, request: web.Request) -> web.Response:
+        if not self._is_admin(request):
+            return _json_error("Administrator access required.", 403)
+        data = _active_entry_data(self.hass)
+        if data is None:
+            return _json_error("Guest Portal is not configured.", 503)
+        try:
+            body = await request.json()
+        except (ValueError, TypeError):
+            return _json_error("Invalid JSON.")
+        action = body.get("action")
+        if action == "add_guest":
+            username = str(body.get("username", "")).strip()
+            guest_id = str(body.get("guest_id") or username).strip()
+            password = str(body.get("password", ""))
+            if not username or len(username) > 64 or len(password) < 12 or len(password) > 256:
+                return _json_error("Username is required and password must contain 12–256 characters.")
+            if not re.fullmatch(r"[a-zA-Z0-9_-]{1,64}", guest_id):
+                return _json_error("Guest ID may contain only letters, numbers, _ and -.")
+            guests = data["storage"].data["guests"]
+            if guest_id in guests or any(g["username"].casefold() == username.casefold() for g in guests.values()):
+                return _json_error("Guest ID or username already exists.", 409)
+            salt, digest = await data["storage"].async_hash_password(password)
+            data["storage"].data["guests"][guest_id] = {
+                "guest_id": guest_id,
+                "username": username,
+                "salt": salt,
+                "password_hash": digest,
+                "read_entities": _clean_entity_list(body.get("read_entities")),
+                "write_entities": _clean_entity_list(body.get("write_entities")),
+                "alone_entities": _clean_entity_list(body.get("alone_entities")),
+                "alone_write_entities": _clean_entity_list(body.get("alone_write_entities")),
+                "enabled": True,
+            }
+            await data["storage"].async_save()
+            return web.json_response({"status": "created"})
+        if action in {"remove_guest", "set_guest_enabled"}:
+            guest_id = str(body.get("guest_id", ""))
+            guest = data["storage"].data["guests"].get(guest_id)
+            if not guest:
+                return _json_error("Guest not found.", 404)
+            if action == "remove_guest":
+                data["storage"].data["guests"].pop(guest_id, None)
+                enabled = False
+            else:
+                enabled = bool(body.get("enabled"))
+                guest["enabled"] = enabled
+            if not enabled:
+                for token, session in list(data["sessions"].items()):
+                    if session["guest_id"] == guest_id:
+                        data["sessions"].pop(token, None)
+            await data["storage"].async_save()
+            return web.json_response({"status": "ok"})
+        if action == "approve_request":
+            request_id = str(body.get("request_id", ""))
+            pending = data["pending"].get(request_id)
+            if not pending or pending["expires"] <= time.time():
+                return _json_error("Approval request expired.", 404)
+            if body.get("approved") is True:
+                pending["status"] = "approved"
+                pending["session_token"] = _new_session(self.hass, data, pending["guest_id"])
+            else:
+                pending["status"] = "rejected"
+            return web.json_response({"status": pending["status"]})
+        return _json_error("Unknown admin action.")
+
+
+def _clean_entity_list(value) -> list[str]:
+    """Accept only syntactically valid entity IDs from admin input."""
+    if not isinstance(value, list):
+        return []
+    result = []
+    for entity_id in value:
+        if isinstance(entity_id, str) and "." in entity_id and len(entity_id) <= 255:
+            domain, object_id = entity_id.split(".", 1)
+            if domain.replace("_", "").isalnum() and object_id.replace("_", "").replace("-", "").isalnum():
+                result.append(entity_id)
+    return sorted(set(result))
+
+
+class GuestAdminPageView(HomeAssistantView):
+    """Serve the administrator dashboard."""
+
+    url = "/guest-portal/admin"
+    name = "guest_portal:admin_page"
+    requires_auth = True
+
+    async def get(self, request: web.Request) -> web.Response:
+        user = request.get("hass_user")
+        if not user or not user.is_admin:
+            return web.Response(text="Administrator access required.", status=403)
+        page = Path(__file__).parent / "www" / "admin.html"
+        return web.Response(text=page.read_text(encoding="utf-8"), content_type="text/html")
