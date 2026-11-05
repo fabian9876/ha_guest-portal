@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="custom_components/guest_portal/brand/icon.png" alt="HA Guest Portal icon" width="180">
+  <img src="custom_components/guest_portal/brand/Icon.png" alt="HA Guest Portal icon" width="180">
 </p>
 
 <h1 align="center">HA Guest Portal</h1>
