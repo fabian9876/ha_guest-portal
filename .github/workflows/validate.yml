@@ -1,0 +1,32 @@
+name: Validate integration
+
+on:
+  push:
+    branches: [main, feature/**]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile Python files
+        run: python -m compileall -q custom_components/guest_portal
+      - name: Validate JSON metadata
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for path in [
+              Path("custom_components/guest_portal/manifest.json"),
+              Path("custom_components/guest_portal/strings.json"),
+              Path("custom_components/guest_portal/translations/en.json"),
+              Path("hacs.json"),
+          ]:
+              json.loads(path.read_text(encoding="utf-8"))
+              print(f"OK: {path}")
+          PY
