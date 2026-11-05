@@ -85,13 +85,14 @@ The portal page is available at \`/guest-portal\` on the same Home Assistant hos
 - The login API is unauthenticated by design; use HTTPS and network-level protections.
 - OTP delivery depends on the configured notify service being correctly targeted.
 - Guest sessions and pending approval/challenge state are in memory; a Home Assistant restart logs guests out and clears pending requests.
-- Guest management is currently performed through administrator-only Home Assistant actions, not a separate visual admin dashboard.
+- The administrator dashboard is an initial management UI, not a full Lovelace sidebar panel. It supports guest creation, enable/disable, removal, allowlist selection, pending approvals and manual alone-mode switching.
 - The integration has not yet been tested against your specific Home Assistant version or hardware. Review the code and test with non-critical entities before use.
 
 ## Roadmap
 
 - [x] 0.1.0 — HACS scaffold and configuration flow
 - [x] 0.2.0 — Guest records, authentication, approvals/OTP and server-side allowlists
-- [ ] 0.3.0 — Visual administrator dashboard, audit log and stronger test coverage
+- [x] 0.3.0 — Initial visual administrator dashboard
+- [ ] 0.4.0 — Audit log, automated integration tests and security review
 - [ ] 0.4.0 — Automated integration tests and security review
 - [ ] 1.0.0 — Stable release
