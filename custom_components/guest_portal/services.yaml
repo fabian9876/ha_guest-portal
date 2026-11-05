@@ -1,0 +1,10 @@
+set_alone_mode:
+  name: Set alone mode
+  description: Manually enable or disable the guest portal alone-at-home mode.
+  fields:
+    enabled:
+      name: Enabled
+      description: Whether alone mode should be active.
+      required: true
+      selector:
+        boolean:
