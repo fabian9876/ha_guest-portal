@@ -1,8 +1,8 @@
 # HA Guest Portal
 
-A Home Assistant custom integration for a controlled guest portal. Version 0.3.0 adds guest accounts, authentication, server-side entity allowlists and an initial guest web page.
+A Home Assistant custom integration for a controlled guest portal. Version 0.4.0 adds native sidebar entries for the guest portal and administrator dashboard.
 
-## Features in 0.3.0
+## Features in 0.4.0
 
 - HACS custom integration and Home Assistant config/options flow.
 - Guest accounts persisted in Home Assistant storage. Passwords are hashed with PBKDF2-HMAC-SHA256 (310,000 iterations); plaintext passwords are not stored.
@@ -12,8 +12,9 @@ A Home Assistant custom integration for a controlled guest portal. Version 0.3.0
 - Server-side read and write allowlists. The browser cannot request arbitrary entity states or arbitrary Home Assistant services.
 - Extra read/write entities can be assigned to a guest and become available only while alone mode is active.
 - Optional automatic alone mode from configured person/device_tracker entities, with an absence delay. Unknown/unavailable presence fails closed.
-- Guest web page at `/guest-portal`.
-- Administrator dashboard at `/guest-portal/admin` (requires a Home Assistant administrator login).
+- **Gäste** sidebar panel with the integration's separate guest login and restricted portal.
+- **Gastverwaltung** sidebar panel, visible only to Home Assistant administrators.
+- Direct routes `/guest-portal` and `/guest-portal/admin` remain available.
 
 ## Installation via HACS
 
@@ -21,6 +22,17 @@ A Home Assistant custom integration for a controlled guest portal. Version 0.3.0
 2. Add `https://github.com/fabian9876/ha_guest-portal` as an **Integration**.
 3. Install **HA Guest Portal**, restart Home Assistant and add the integration under Settings → Devices & services.
 4. Configure the home zone, monitored people/devices, authentication mode and notification service.
+
+## Sidebar access and guest accounts
+
+After the integration is configured, Home Assistant registers two sidebar entries:
+
+- **Gäste** is available to signed-in Home Assistant users. It opens the guest login page. Guests sign in there with the separate username/password created in this integration, then see only the entities allowed for that guest.
+- **Gastverwaltung** is restricted to Home Assistant administrators and opens the management dashboard.
+
+**Important authentication boundary:** Home Assistant requires a Home Assistant frontend login before anyone can see its sidebar. The integration's guest username/password is a separate login inside the Gäste panel; it does not replace the initial Home Assistant login or create a restricted Home Assistant user. A guest using the sidebar therefore still needs a Home Assistant account to enter the frontend. Hiding other sidebar entries does not reduce the permissions of that Home Assistant account.
+
+If guests must not receive Home Assistant accounts, use the standalone `/guest-portal` route instead of the sidebar panel, and do not expose the Home Assistant administration interface to guests.
 
 ## Managing guests
 
@@ -86,7 +98,7 @@ The portal page is available at `/guest-portal` on the same Home Assistant host.
 - The login API is unauthenticated by design; use HTTPS and network-level protections.
 - OTP delivery depends on the configured notify service being correctly targeted.
 - Guest sessions and pending approval/challenge state are in memory; a Home Assistant restart logs guests out and clears pending requests.
-- The administrator dashboard is an initial management UI, not a full Lovelace sidebar panel. It supports guest creation, enable/disable, removal, allowlist selection, pending approvals and manual alone-mode switching.
+- The guest and administrator sidebar entries wrap the existing portal pages. The administrator panel is hidden from non-admin Home Assistant users, and its API independently checks administrator status.
 - The integration has not yet been tested against your specific Home Assistant version or hardware. Review the code and test with non-critical entities before use.
 
 ## Roadmap
