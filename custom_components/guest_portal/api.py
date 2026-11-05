@@ -249,17 +249,34 @@ class GuestStatesView(HomeAssistantView):
         _, _, guest = session
         alone = data["alone_mode"]
         readable, writable = _active_entity_lists(guest, alone)
+        from homeassistant.helpers import area_registry, device_registry, entity_registry
+
+        hass = request.app["hass"]
+        areas = area_registry.async_get(hass)
+        devices = device_registry.async_get(hass)
+        registry = entity_registry.async_get(hass)
         states = []
         for entity_id in sorted(readable):
-            state = request.app["hass"].states.get(entity_id)
+            state = hass.states.get(entity_id)
             if state is None:
                 continue
+            entity_entry = registry.async_get(entity_id)
+            area_id = entity_entry.area_id if entity_entry else None
+            if not area_id and entity_entry and entity_entry.device_id:
+                device = devices.async_get(entity_entry.device_id)
+                area_id = device.area_id if device else None
+            area = areas.async_get_area(area_id) if area_id else None
             states.append({
                 "entity_id": entity_id,
                 "state": state.state,
                 "name": state.attributes.get("friendly_name", entity_id),
                 "unit": state.attributes.get("unit_of_measurement"),
                 "can_control": entity_id in writable,
+                "area_id": area_id,
+                "area_name": area.name if area else "Nicht zugewiesen",
+                "domain": entity_id.split(".", 1)[0],
+                "device_class": state.attributes.get("device_class"),
+                "icon": state.attributes.get("icon"),
             })
         return web.json_response({"alone_mode": alone, "entities": states})
 
