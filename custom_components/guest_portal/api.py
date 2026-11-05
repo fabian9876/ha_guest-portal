@@ -53,6 +53,7 @@ def _new_session(hass, data: dict, guest_id: str) -> str:
     ))
     data["sessions"][token] = {
         "guest_id": guest_id,
+        "created": time.time(),
         "expires": time.time() + minutes * 60,
     }
     return token
@@ -66,11 +67,14 @@ def _get_session(request: web.Request, data: dict):
     session = data["sessions"].get(token)
     if not session:
         return None
-    if session["expires"] <= time.time():
-        data["sessions"].pop(token, None)
-        return None
     guest = data["storage"].data["guests"].get(session["guest_id"])
-    if not guest or not guest.get("enabled", True):
+    manager = data.get("access_manager")
+    valid = (
+        manager.session_is_active(session, guest)
+        if manager and guest else
+        bool(guest and guest.get("enabled", True) and session["expires"] > time.time())
+    )
+    if not valid:
         data["sessions"].pop(token, None)
         return None
     return token, session, guest
@@ -256,7 +260,7 @@ class GuestStatesView(HomeAssistantView):
         states = []
         manager = data.get("access_manager")
         for entity_id in sorted(readable):
-            if manager and not manager.authorize_entity(guest, entity_id, "read", alone):
+            if manager and not manager.authorize_entity(guest, entity_id, "read", alone, data):
                 continue
             state = request.app["hass"].states.get(entity_id)
             if state is None:
@@ -294,7 +298,7 @@ class GuestControlView(HomeAssistantView):
         service = str(body.get("service", ""))
         manager = data.get("access_manager")
         permitted = (
-            manager.authorize_entity(guest, entity_id, "control", data["alone_mode"])
+            manager.authorize_entity(guest, entity_id, "control", data["alone_mode"], data)
             if manager else entity_id in _active_entity_lists(guest, data["alone_mode"])[1]
         )
         if not permitted:
@@ -349,6 +353,10 @@ class GuestAdminApiView(HomeAssistantView):
                 "guest_id": guest["guest_id"],
                 "username": guest["username"],
                 "enabled": guest.get("enabled", True),
+                "role": guest.get("role", "custom"),
+                "profile_id": guest.get("profile_id"),
+                "expires_at": guest.get("expires_at"),
+                "created_at": guest.get("created_at"),
                 "read_entities": guest.get("read_entities", []),
                 "write_entities": guest.get("write_entities", []),
                 "alone_entities": guest.get("alone_entities", []),
@@ -382,6 +390,9 @@ class GuestAdminApiView(HomeAssistantView):
                 )
             ],
             "alone_mode": data["alone_mode"],
+            "sessions": data["access_manager"].public_sessions(data),
+            "profiles": list(data["storage"].data.get("profiles", {}).values()),
+            "audit": list(reversed(data.get("audit", [])))[:100],
         })
 
     async def post(self, request: web.Request) -> web.Response:
@@ -417,6 +428,10 @@ class GuestAdminApiView(HomeAssistantView):
                 "alone_entities": _clean_entity_list(body.get("alone_entities")),
                 "alone_write_entities": _clean_entity_list(body.get("alone_write_entities")),
                 "enabled": True,
+                "role": str(body.get("role", "custom"))[:32],
+                "profile_id": body.get("profile_id") or None,
+                "created_at": int(time.time()),
+                "expires_at": _clean_expiry(body.get("expires_at")),
             }
             await data["storage"].async_save()
             return web.json_response({"status": "created"})
@@ -434,6 +449,10 @@ class GuestAdminApiView(HomeAssistantView):
             guest["username"] = username
             for field in ("read_entities", "write_entities", "alone_entities", "alone_write_entities"):
                 guest[field] = _clean_entity_list(body.get(field, guest.get(field, [])))
+            guest["role"] = str(body.get("role", guest.get("role", "custom")))[:32]
+            guest["profile_id"] = body.get("profile_id", guest.get("profile_id")) or None
+            if "expires_at" in body:
+                guest["expires_at"] = _clean_expiry(body.get("expires_at"))
             password = str(body.get("password", ""))
             if password:
                 if len(password) < 12 or len(password) > 256:
@@ -457,11 +476,57 @@ class GuestAdminApiView(HomeAssistantView):
                 enabled = bool(body.get("enabled"))
                 guest["enabled"] = enabled
             if not enabled:
-                for token, session in list(data["sessions"].items()):
-                    if session["guest_id"] == guest_id:
-                        data["sessions"].pop(token, None)
+                data["access_manager"].revoke_guest_sessions(data, guest_id)
             await data["storage"].async_save()
             return web.json_response({"status": "ok"})
+        if action == "revoke_guest_sessions":
+            guest_id = str(body.get("guest_id", ""))
+            if guest_id not in data["storage"].data["guests"]:
+                return _json_error("Guest not found.", 404)
+            count = data["access_manager"].revoke_guest_sessions(data, guest_id)
+            return web.json_response({"status": "ok", "revoked": count})
+        if action == "revoke_all_sessions":
+            count = data["access_manager"].revoke_all_sessions(data)
+            return web.json_response({"status": "ok", "revoked": count})
+        if action == "revoke_session":
+            session_id = str(body.get("session_id", ""))
+            sessions = data["access_manager"].public_sessions(data)
+            match = next((item for item in sessions if item["session_id"] == session_id), None)
+            if not match:
+                return _json_error("Session not found.", 404)
+            for token, item in list(data["sessions"].items()):
+                import hashlib
+                if hashlib.sha256(token.encode()).hexdigest()[:12] == session_id:
+                    data["sessions"].pop(token, None)
+                    data["access_manager"].append_audit(data, {
+                        "guest_id": match["guest_id"], "operation": "revoke_session",
+                        "allowed": True,
+                    })
+                    break
+            return web.json_response({"status": "ok"})
+        if action == "save_profile":
+            profile_id = str(body.get("profile_id", "")).strip()
+            name = str(body.get("name", "")).strip()
+            if not re.fullmatch(r"[a-zA-Z0-9_-]{1,48}", profile_id) or not name or len(name) > 64:
+                return _json_error("Profile ID or name is invalid.")
+            profiles = data["storage"].data.setdefault("profiles", {})
+            profiles[profile_id] = {
+                "profile_id": profile_id, "name": name,
+                "read_entities": _clean_entity_list(body.get("read_entities")),
+                "write_entities": _clean_entity_list(body.get("write_entities")),
+                "alone_entities": _clean_entity_list(body.get("alone_entities")),
+                "alone_write_entities": _clean_entity_list(body.get("alone_write_entities")),
+            }
+            await data["storage"].async_save()
+            return web.json_response({"status": "saved"})
+        if action == "delete_profile":
+            profile_id = str(body.get("profile_id", ""))
+            data["storage"].data.setdefault("profiles", {}).pop(profile_id, None)
+            for guest in data["storage"].data["guests"].values():
+                if guest.get("profile_id") == profile_id:
+                    guest["profile_id"] = None
+            await data["storage"].async_save()
+            return web.json_response({"status": "deleted"})
         if action == "set_alone_mode":
             enabled = bool(body.get("enabled"))
             data["alone_mode"] = enabled
@@ -481,6 +546,19 @@ class GuestAdminApiView(HomeAssistantView):
                 pending["status"] = "rejected"
             return web.json_response({"status": pending["status"]})
         return _json_error("Unknown admin action.")
+
+
+def _clean_expiry(value) -> int | None:
+    """Accept an optional Unix expiry timestamp in the future."""
+    if value in (None, "", 0, "0"):
+        return None
+    try:
+        expiry = int(value)
+    except (TypeError, ValueError):
+        raise ValueError("Expiry must be a Unix timestamp.") from None
+    if expiry <= int(time.time()) or expiry > int(time.time()) + 366 * 24 * 60 * 60:
+        raise ValueError("Expiry must be within the next 366 days.")
+    return expiry
 
 
 def _clean_entity_list(value) -> list[str]:
