@@ -27,7 +27,7 @@ async def async_register_panels(hass: HomeAssistant) -> None:
         webcomponent_name="ha-guest-portal-panel",
         frontend_url_path="guest-portal",
         sidebar_title="Gäste",
-        sidebar_icon="mdi:account-group",
+        sidebar_icon="mdi:home-account",
         module_url=module_url,
         config={"path": "/guest-portal"},
         require_admin=False,
