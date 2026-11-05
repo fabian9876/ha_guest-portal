@@ -7,6 +7,7 @@ import logging
 import re
 
 import voluptuous as vol
+from homeassistant.components import frontend
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.helpers import selector
@@ -38,6 +39,7 @@ from .const import (
     SERVICE_SET_ALONE_MODE,
     SERVICE_SET_GUEST_ENABLED,
 )
+from .panel import async_register_panels
 from .storage import GuestStorage
 
 _LOGGER = logging.getLogger(__name__)
@@ -205,6 +207,8 @@ def _active_data(hass: HomeAssistant):
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Load persisted guest data and start presence monitoring."""
+    await async_register_panels(hass)
+
     domain_data = hass.data[DOMAIN]
     storage = GuestStorage(hass)
     await storage.async_load()
@@ -294,6 +298,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if data and data["presence_task"]:
         data["presence_task"].cancel()
     hass.data[DOMAIN]["active_entry"] = next(iter(hass.data[DOMAIN]["entries"]), None)
+    if not hass.data[DOMAIN]["entries"]:
+        frontend.async_remove_panel(hass, "guest-portal")
+        frontend.async_remove_panel(hass, "guest-portal-admin")
     return True
 
 

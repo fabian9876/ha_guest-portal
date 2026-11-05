@@ -479,11 +479,13 @@ class GuestAdminPageView(HomeAssistantView):
 
     url = "/guest-portal/admin"
     name = "guest_portal:admin_page"
-    requires_auth = True
+    # The page shell is public; its data API requires an authenticated admin token.
+    requires_auth = False
 
     async def get(self, request: web.Request) -> web.Response:
-        user = request.get("hass_user")
-        if not user or not user.is_admin:
-            return web.Response(text="Administrator access required.", status=403)
         page = Path(__file__).parent / "www" / "admin.html"
-        return web.Response(text=page.read_text(encoding="utf-8"), content_type="text/html")
+        hass = request.app["hass"]
+        content = await hass.async_add_executor_job(
+            lambda: page.read_text(encoding="utf-8")
+        )
+        return web.Response(text=content, content_type="text/html")
