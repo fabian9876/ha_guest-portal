@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import hmac
 import io
@@ -544,19 +545,32 @@ class GuestAdminApiView(HomeAssistantView):
             guest = data["storage"].data["guests"].get(guest_id)
             if not guest or not data["access_manager"].guest_is_active(guest):
                 return _json_error("Guest not found, disabled or expired.", 404)
-            qr_tokens = data["storage"].data.setdefault("qr_tokens", {})
-            for digest, item in list(qr_tokens.items()):
-                if item.get("guest_id") == guest_id:
-                    qr_tokens.pop(digest, None)
             raw_token = secrets.token_urlsafe(32)
             token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
             expiry = int(time.time()) + 30 * 24 * 60 * 60
             if guest.get("expires_at"):
                 expiry = min(expiry, int(guest["expires_at"]))
+            guest_url = str(body.get("url", "")).strip()
+            if not guest_url.startswith(("http://", "https://")) or len(guest_url) > 2048:
+                return _json_error("Ungültige Gast-URL für den QR-Code.")
+            try:
+                import segno
+                qr = segno.make(guest_url, error="m")
+                output = io.BytesIO()
+                qr.save(output, kind="png", scale=8, border=3)
+                qr_image = base64.b64encode(output.getvalue()).decode("ascii")
+            except ImportError:
+                return _json_error("QR-Bibliothek Segno fehlt. Home Assistant neu starten und Integration prüfen.", 503)
+            except (ValueError, TypeError, OSError) as err:
+                return _json_error(f"QR-Bild konnte nicht erzeugt werden: {err}", 500)
+            qr_tokens = data["storage"].data.setdefault("qr_tokens", {})
+            for digest, item in list(qr_tokens.items()):
+                if item.get("guest_id") == guest_id:
+                    qr_tokens.pop(digest, None)
             qr_tokens[token_hash] = {"guest_id": guest_id, "created": int(time.time()), "expires": expiry}
             data["access_manager"].append_audit(data, {"guest_id": guest_id, "username": guest["username"], "operation": "create_qr_token", "allowed": True})
             await data["storage"].async_save()
-            return web.json_response({"access_token": raw_token, "expires": expiry})
+            return web.json_response({"access_token": raw_token, "expires": expiry, "qr_image": qr_image})
         if action == "revoke_qr_token":
             guest_id = str(body.get("guest_id", ""))
             if guest_id not in data["storage"].data["guests"]:
