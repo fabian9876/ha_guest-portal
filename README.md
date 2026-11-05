@@ -1,6 +1,20 @@
-# HA Guest Portal
+<p align="center">
+  <img src="custom_components/guest_portal/brand/icon.png" alt="HA Guest Portal icon" width="180">
+</p>
+
+<h1 align="center">HA Guest Portal</h1>
+<p align="center">Ein separater, sicher begrenzter Gastzugang für Home Assistant.</p>
 
 A Home Assistant custom integration that provides a separate, restricted guest portal for Home Assistant entities. Version **1.0.0** includes centralized guest access management, redesigned guest and admin interfaces, and QR-code guest access.
+
+## Branding and HACS
+
+The integration ships its own brand assets in `custom_components/guest_portal/brand/`:
+- `icon.png` — integration icon (512 × 512).
+- `icon@2x.png` — high-resolution icon.
+- `logo.svg` — scalable source artwork.
+
+The branding is bundled with the integration for Home Assistant's local integration-branding support. HACS repositories with `render_readme: true` also show the README branding. Note that HACS's own repository-list icon can depend on HACS frontend/catalog support; the local brand files do not force that separate UI to display an icon.
 
 ## Zentrale Gastverwaltung
 
