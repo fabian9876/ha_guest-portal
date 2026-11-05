@@ -63,9 +63,6 @@ class GuestPortalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class GuestPortalOptionsFlow(config_entries.OptionsFlow):
     """Handle options for an existing config entry."""
 
-    def __init__(self, config_entry):
-        self.config_entry = config_entry
-
     async def async_step_init(self, user_input=None):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
