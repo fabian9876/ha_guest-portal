@@ -235,18 +235,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             CONF_PRESENCE_ZONE, entry.data.get(CONF_PRESENCE_ZONE, "zone.home")
         )
         zone_state = hass.states.get(zone_id)
-        zone_name = (
-            zone_state.attributes.get("friendly_name", zone_id.split(".", 1)[-1])
-            if zone_state else "home"
-        )
         states = [hass.states.get(entity_id) for entity_id in entities]
-        if not states or any(state is None or state.state in {"unknown", "unavailable"} for state in states):
+        if (
+            zone_state is None
+            or zone_state.state in {"unknown", "unavailable"}
+            or not states
+            or any(state is None or state.state in {"unknown", "unavailable"} for state in states)
+        ):
             data["alone_mode"] = False
             hass.bus.async_fire(EVENT_ALONE_MODE_CHANGED, {
                 "entry_id": entry.entry_id, "enabled": False, "source": "presence_unknown"
             })
             return
         else:
+            zone_name = zone_state.attributes.get("friendly_name", zone_id.split(".", 1)[-1])
             at_home = any(state.state in {"home", zone_name} for state in states)
             if at_home:
                 data["alone_mode"] = False
