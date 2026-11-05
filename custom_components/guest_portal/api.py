@@ -550,9 +550,10 @@ class GuestAdminApiView(HomeAssistantView):
             expiry = int(time.time()) + 30 * 24 * 60 * 60
             if guest.get("expires_at"):
                 expiry = min(expiry, int(guest["expires_at"]))
-            guest_url = str(body.get("url", "")).strip()
-            if not guest_url.startswith(("http://", "https://")) or len(guest_url) > 2048:
+            guest_base_url = str(body.get("url", "")).strip().rstrip("/")
+            if not guest_base_url.startswith(("http://", "https://")) or len(guest_base_url) > 2000 or "#" in guest_base_url:
                 return _json_error("Ungültige Gast-URL für den QR-Code.")
+            guest_url = f"{guest_base_url}#access={raw_token}"
             try:
                 import segno
                 qr = segno.make(guest_url, error="m")
@@ -570,7 +571,7 @@ class GuestAdminApiView(HomeAssistantView):
             qr_tokens[token_hash] = {"guest_id": guest_id, "created": int(time.time()), "expires": expiry}
             data["access_manager"].append_audit(data, {"guest_id": guest_id, "username": guest["username"], "operation": "create_qr_token", "allowed": True})
             await data["storage"].async_save()
-            return web.json_response({"access_token": raw_token, "expires": expiry, "qr_image": qr_image})
+            return web.json_response({"access_token": raw_token, "expires": expiry, "qr_image": qr_image, "url": guest_url})
         if action == "revoke_qr_token":
             guest_id = str(body.get("guest_id", ""))
             if guest_id not in data["storage"].data["guests"]:
