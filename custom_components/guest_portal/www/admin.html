@@ -92,12 +92,10 @@ function resetForm(){editingId=null;$("guestForm").reset();$("guest_id").disable
 function openEditor(guest=null){editingId=guest?guest.guest_id:null;$("guestForm").reset();$("username").value=guest?.username||"";$("guest_id").value=guest?.guest_id||"";$("guest_id").disabled=!!guest;$("password").value="";$("role").value=guest?.role||"custom";$("expiresAt").value=guest?.expires_at?new Date(guest.expires_at*1000).toISOString().slice(0,10):"";$("profileSelect").value=guest?.profile_id||"";$("password").required=!guest;$("passwordHint").textContent=guest?"(leer lassen, um das Passwort beizubehalten)":"(mindestens 12 Zeichen)";$("editorTitle").textContent=guest?"Gast bearbeiten":"Gast anlegen";$("saveGuest").textContent=guest?"Änderungen speichern":"Gast speichern";drawDeviceGroups(guest||{});$("editor").classList.remove("hidden");$("editor").scrollIntoView({behavior:"smooth",block:"start"})}
 async function createQr(guest){
  try{
-  const created=await post({action:"create_qr_token",guest_id:guest.guest_id});
-  const url=window.location.origin+"/guest-portal#access="+encodeURIComponent(created.access_token);
-  const response=await fetch("/api/guest_portal/qr-image",{method:"POST",headers:{"Content-Type":"application/json",...authHeaders()},body:JSON.stringify({access_token:created.access_token,url})});
-  if(!response.ok){const detail=await response.json().catch(()=>({}));throw new Error(detail.error||"QR-Code konnte nicht erstellt werden.")}
-  if(activeQrImage)URL.revokeObjectURL(activeQrImage);
-  activeQrImage=URL.createObjectURL(await response.blob());activeQrUrl=url;
+  const created=await post({action:"create_qr_token",guest_id:guest.guest_id,url:window.location.origin+"/guest-portal"});
+  if(!created.qr_image||!created.url)throw new Error("Der Server hat kein vollständiges QR-Ergebnis zurückgegeben.");
+  if(activeQrImage&&activeQrImage.startsWith("blob:"))URL.revokeObjectURL(activeQrImage);
+  activeQrImage="data:image/png;base64,"+created.qr_image;activeQrUrl=created.url;
   $("qrImage").src=activeQrImage;$("qrGuestName").textContent="Gast: "+guest.username;
   $("qrExpiry").textContent="Gültig bis "+new Date(created.expires*1000).toLocaleString("de-DE")+" · maximal 30 Tage";
   $("qrDialog").classList.remove("hidden");msg("QR-Code erstellt. Der vorherige QR-Code dieses Gastes ist damit ungültig.");
