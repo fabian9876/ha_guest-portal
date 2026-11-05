@@ -12,6 +12,7 @@ class HaGuestPortalPanel extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
+    this._sendAdminAuth();
   }
 
   _render() {
@@ -26,7 +27,18 @@ class HaGuestPortalPanel extends HTMLElement {
     frame.src = path;
     frame.title = path.endsWith("/admin") ? "Gastverwaltung" : "Gästeportal";
     frame.referrerPolicy = "same-origin";
+    frame.addEventListener("load", () => this._sendAdminAuth());
+    this._frame = frame;
     this.shadowRoot.replaceChildren(style, frame);
+  }
+  _sendAdminAuth() {
+    if (!this._path || !this._path.endsWith("/admin")) return;
+    const token = this._hass && this._hass.auth && this._hass.auth.accessToken;
+    if (!token || !this._frame || !this._frame.contentWindow) return;
+    this._frame.contentWindow.postMessage(
+      { type: "guest-portal-auth", accessToken: token },
+      window.location.origin
+    );
   }
 }
 
