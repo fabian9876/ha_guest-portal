@@ -2,6 +2,25 @@
 
 A Home Assistant custom integration for a controlled guest portal. Version 0.4.0 adds native sidebar entries for the guest portal and administrator dashboard.
 
+## Zentrale Gastverwaltung
+
+Alle von dieser Integration angebotenen Gastzugriffe laufen über einen zentralen
+Policy-Entscheidungspunkt. Lese- und Steuerrechte werden serverseitig geprüft;
+Zugriffsentscheidungen werden als Home-Assistant-Event
+`guest_portal_access_decision` veröffentlicht.
+
+Die Admin-Oberfläche zeigt außerdem aktive Sitzungen und letzte Zugriffsereignisse.
+Administratoren können einzelne Sitzungen, alle Sitzungen eines Gastes oder
+sämtliche Gastsitzungen beenden. Gastkonten unterstützen optionale Ablaufdaten,
+Kategorien und wiederverwendbare Berechtigungsprofile.
+
+**Systemgrenze:** Das filtert nicht die native Home-Assistant-Oberfläche,
+REST-/WebSocket-API oder Companion-App. Gäste dürfen deshalb keinen
+uneingeschränkten HA-Account oder dauerhaften HA-Token erhalten und müssen
+ausschließlich die Gastzugänge dieser Integration verwenden.
+
+Details: [Architekturdokumentation](docs/architecture.md).
+
 ## Features in 0.4.0
 
 - HACS custom integration and Home Assistant config/options flow.

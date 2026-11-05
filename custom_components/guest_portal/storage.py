@@ -19,13 +19,15 @@ class GuestStorage:
 
     def __init__(self, hass: HomeAssistant) -> None:
         self._store = Store(hass, 1, f"{DOMAIN}_guests")
-        self.data: dict = {"guests": {}}
+        self.data: dict = {"guests": {}, "profiles": {}, "audit": []}
 
     async def async_load(self) -> None:
         """Load persisted guest records."""
         stored = await self._store.async_load()
         if isinstance(stored, dict) and isinstance(stored.get("guests"), dict):
             self.data = stored
+        self.data.setdefault("profiles", {})
+        self.data.setdefault("audit", [])
 
     async def async_save(self) -> None:
         """Persist guest records."""

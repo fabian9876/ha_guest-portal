@@ -36,9 +36,12 @@ from .const import (
     SERVICE_ADD_GUEST,
     SERVICE_APPROVE_REQUEST,
     SERVICE_REMOVE_GUEST,
+    SERVICE_REVOKE_ALL_SESSIONS,
+    SERVICE_REVOKE_GUEST_SESSIONS,
     SERVICE_SET_ALONE_MODE,
     SERVICE_SET_GUEST_ENABLED,
 )
+from .access_manager import GuestAccessManager
 from .panel import async_register_panels
 from .storage import GuestStorage
 
@@ -149,6 +152,24 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
                     data["sessions"].pop(token, None)
         await data["storage"].async_save()
 
+    async def revoke_guest_sessions(call: ServiceCall) -> None:
+        if not await _require_admin(hass, call):
+            return
+        data = _active_data(hass)
+        if data is None:
+            return
+        count = data["access_manager"].revoke_guest_sessions(data, call.data["guest_id"])
+        _LOGGER.info("Revoked %s sessions for guest %s", count, call.data["guest_id"])
+
+    async def revoke_all_sessions(call: ServiceCall) -> None:
+        if not await _require_admin(hass, call):
+            return
+        data = _active_data(hass)
+        if data is None:
+            return
+        count = data["access_manager"].revoke_all_sessions(data)
+        _LOGGER.warning("Administrator revoked all %s guest sessions", count)
+
     async def approve_request(call: ServiceCall) -> None:
         if not await _require_admin(hass, call):
             _LOGGER.warning("Rejected non-admin approval attempt")
@@ -192,6 +213,14 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         }),
     )
     hass.services.async_register(
+        DOMAIN, SERVICE_REVOKE_GUEST_SESSIONS, revoke_guest_sessions,
+        schema=vol.Schema({vol.Required("guest_id"): str}),
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_REVOKE_ALL_SESSIONS, revoke_all_sessions,
+        schema=vol.Schema({}),
+    )
+    hass.services.async_register(
         DOMAIN, SERVICE_APPROVE_REQUEST, approve_request,
         schema=vol.Schema({
             vol.Required("request_id"): str, vol.Required("approved"): bool
@@ -215,6 +244,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     data = {
         "entry": entry,
         "storage": storage,
+        "access_manager": GuestAccessManager(hass),
+        "audit": storage.data.setdefault("audit", []),
         "alone_mode": False,
         "sessions": {},
         "pending": {},
