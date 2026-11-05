@@ -4,41 +4,37 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101827"><title>Gästeportal</title>
 <style>
-:root{font-family:Roboto,"Helvetica Neue",Arial,sans-serif;color:var(--primary-text-color,#e1e1e1);background:var(--primary-background-color,#111e2c);--surface:var(--card-background-color,#1c2938);--line:var(--divider-color,#394b5d);--muted:var(--secondary-text-color,#9aa7b5);--accent:var(--primary-color,#03a9f4);--radius:var(--ha-card-border-radius,12px)}
+:root{font-family:Roboto,"Helvetica Neue",Arial,sans-serif;color:var(--primary-text-color,#e1e1e1);background:var(--primary-background-color,#111e2c);--surface:var(--card-background-color,#1c2938);--surface2:var(--secondary-background-color,#263747);--line:var(--divider-color,#394b5d);--muted:var(--secondary-text-color,#9aa7b5);--accent:var(--primary-color,#03a9f4);--radius:var(--ha-card-border-radius,12px)}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--primary-background-color,#111e2c);color:var(--primary-text-color,#e1e1e1)}
-.wrap{width:min(1050px,100%);margin:auto;padding:clamp(16px,3vw,30px)}header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}
-.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:50%;background:var(--accent);color:white;display:grid;place-items:center;font-size:25px}
-h1{font-size:clamp(1.5rem,4vw,2rem);font-weight:400;margin:0}p{color:var(--muted);line-height:1.5}.sub{margin:4px 0 0}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:clamp(16px,3vw,24px);box-shadow:var(--ha-card-box-shadow,none)}
-label{display:block;color:var(--muted);font-size:.9rem;margin:14px 0 7px}input,button{font:inherit;border-radius:var(--ha-control-border-radius,6px);padding:10px 13px}input{width:100%;min-height:42px;border:1px solid var(--line);background:var(--input-fill-color,rgba(127,127,127,.08));color:var(--primary-text-color,#e1e1e1)}
-button{min-height:40px;border:0;background:var(--accent);color:white;cursor:pointer;font-weight:500}button:disabled{opacity:.5;cursor:wait}.secondary{background:transparent;border:1px solid var(--line);color:var(--primary-text-color,#e1e1e1)}.danger{background:var(--error-color,#db4437)}
+.wrap{width:min(1240px,100%);margin:auto;padding:0 28px 42px}.topbar{height:66px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);margin:0 0 32px}.brand-mark{width:38px;height:38px;border-radius:10px;background:var(--accent);color:white;display:grid;place-items:center;font-size:24px}.brand h1{font-size:1rem;font-weight:500;margin:0}.brand p{font-size:.78rem;margin:3px 0 0;color:var(--muted)}
+.welcome-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(330px,470px);gap:clamp(28px,6vw,90px);align-items:center;max-width:1060px;margin:7vh auto 0}.welcome-copy{padding:12px 0}.eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--accent);font-size:.82rem;font-weight:500;letter-spacing:.04em;text-transform:uppercase}.eyebrow:before{content:"";width:18px;height:2px;background:var(--accent)}.welcome-copy h2{font-size:clamp(2rem,5vw,3.35rem);font-weight:300;line-height:1.1;letter-spacing:-.045em;margin:18px 0}.welcome-copy>p{max-width:470px;color:var(--muted);font-size:1rem;line-height:1.7}.feature-list{display:grid;gap:15px;margin-top:30px}.feature{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:.9rem}.feature-icon{width:34px;height:34px;border:1px solid var(--line);border-radius:9px;display:grid;place-items:center;color:var(--accent)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:clamp(20px,3vw,30px);box-shadow:var(--ha-card-box-shadow,none)}.panel-title{font-size:1.25rem;font-weight:500;margin:0 0 6px}.panel-subtitle{font-size:.87rem;color:var(--muted);margin:0 0 18px}
+label{display:block;color:var(--muted);font-size:.86rem;margin:14px 0 7px}input,button{font:inherit;border-radius:var(--ha-control-border-radius,6px);padding:10px 13px}input{width:100%;min-height:44px;border:1px solid var(--line);background:var(--input-fill-color,rgba(127,127,127,.08));color:var(--primary-text-color,#e1e1e1)}input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{min-height:42px;border:0;background:var(--accent);color:white;cursor:pointer;font-weight:500}button:hover{filter:brightness(1.08)}button:disabled{opacity:.5;cursor:wait}.secondary{background:transparent;border:1px solid var(--line);color:var(--primary-text-color,#e1e1e1)}
 .actions{display:flex;gap:9px;flex-wrap:wrap}.actions button{flex:1;min-width:90px}.hidden{display:none!important}
-#message{min-height:24px;margin:10px 0;color:var(--muted)}.statusbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:16px 0}
-.pill{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:6px;background:var(--secondary-background-color,#263747);color:var(--primary-text-color,#e1e1e1);font-size:.85rem}
-.tools{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.tools input{flex:1;min-width:190px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px}
-.device{background:var(--primary-background-color,#111e2c);border:1px solid var(--line);border-radius:var(--radius);padding:15px;min-width:0}
-.device-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.device-name{font-weight:500;font-size:1rem;overflow-wrap:anywhere}.device-id{font-size:.76rem;color:var(--muted);margin-top:5px;overflow-wrap:anywhere}
-.state{font-size:1.25rem;font-weight:500;margin:16px 0 13px}.state small{font-size:.85rem;color:var(--muted);font-weight:400}
-.empty{grid-column:1/-1;border:1px dashed var(--line);border-radius:var(--radius);padding:26px;text-align:center;color:var(--muted)}
-footer{margin-top:20px;text-align:right}
-@media(max-width:520px){.wrap{padding:12px}.panel{border-radius:var(--radius)}header{align-items:flex-start}}
+#message{min-height:22px;margin:0 0 16px;padding:8px 10px;border-radius:6px;background:var(--surface2);color:var(--muted);font-size:.83rem;line-height:1.4}.statusbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:4px 0 18px}.pill{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:6px;background:var(--surface2);color:var(--primary-text-color,#e1e1e1);font-size:.82rem}
+.tools{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.tools input{flex:1;min-width:190px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:12px}
+.device{background:var(--primary-background-color,#111e2c);border:1px solid var(--line);border-radius:var(--radius);padding:16px;min-width:0;transition:border-color .15s}.device:hover{border-color:var(--accent)}.device-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.device-name{font-weight:500;font-size:1rem;overflow-wrap:anywhere}.device-id{font-size:.75rem;color:var(--muted);margin-top:5px;overflow-wrap:anywhere}.device-top>span{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;background:var(--surface2)}
+.state{font-size:1.3rem;font-weight:500;margin:18px 0 14px}.state small{font-size:.85rem;color:var(--muted);font-weight:400}.empty{grid-column:1/-1;border:1px dashed var(--line);border-radius:var(--radius);padding:32px;text-align:center;color:var(--muted)}
+.portal-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px}.portal-heading h2{font-size:1.65rem;font-weight:400;margin:0}.portal-heading p{margin:5px 0 0;color:var(--muted);font-size:.88rem}footer{margin-top:20px;text-align:right}
+@media(max-width:760px){.wrap{padding:0 14px 28px}.topbar{margin-bottom:18px}.welcome-layout{grid-template-columns:1fr;gap:22px;margin:3vh auto 0}.welcome-copy{padding:0}.welcome-copy h2{font-size:2.2rem;margin:12px 0}.feature-list{display:none}.panel{padding:18px}.portal-heading h2{font-size:1.4rem}}
 </style></head>
 <body><div class="wrap">
-<header><div class="brand"><div class="logo">⌂</div><div><h1>Willkommen</h1><p class="sub">Dein Zuhause auf einen Blick</p></div></div></header>
-<main class="panel">
-<p id="message" role="status">Bitte melde dich mit deinen Gast-Zugangsdaten an.</p>
-<section id="login">
+<header class="topbar"><div class="brand-mark">⌂</div><div class="brand"><h1>Home Assistant</h1><p>Gastportal</p></div></header>
+<main class="welcome-layout"><aside class="welcome-copy"><span class="eyebrow">Willkommen zuhause</span><h2>Dein Zuhause.<br>Auf einen Blick.</h2><p>Melde dich an, um die Geräte und Funktionen zu nutzen, die für deinen Gastzugang freigegeben wurden.</p><div class="feature-list"><div class="feature"><span class="feature-icon">⌂</span><span>Freigegebene Geräte zentral im Blick</span></div><div class="feature"><span class="feature-icon">◉</span><span>Persönlicher und geschützter Zugang</span></div><div class="feature"><span class="feature-icon">✓</span><span>Nur die Berechtigungen, die dir zugewiesen wurden</span></div></div></aside>
+<section class="panel"><section id="login"><h2 class="panel-title">Anmelden</h2><p class="panel-subtitle">Nutze deine Gast-Zugangsdaten.</p><p id="message" role="status">Bitte melde dich mit deinen Gast-Zugangsdaten an.</p>
 <label for="username">Benutzername</label><input id="username" autocomplete="username" maxlength="64">
 <label for="password">Passwort</label><input id="password" type="password" autocomplete="current-password">
 <button id="loginButton" style="width:100%;margin-top:18px">Anmelden</button>
 <div id="otpBox" class="hidden"><label for="otp">Einmalcode</label><input id="otp" inputmode="numeric" maxlength="6"><button id="otpButton" style="width:100%;margin-top:10px">Code bestätigen</button></div>
 </section>
 <section id="portal" class="hidden">
+<div class="portal-heading"><div><h2>Deine Geräte</h2><p>Dein freigegebener Bereich</p></div></div>
 <div class="statusbar"><span id="mode" class="pill"></span><span id="count" class="pill"></span></div>
 <div class="tools"><input id="filter" type="search" placeholder="Gerät suchen …" aria-label="Geräte suchen"></div>
 <div id="entities" class="grid" style="margin-top:16px"></div>
 <footer><button id="logout" class="secondary">Abmelden</button></footer>
+</section>
 </section>
 </main></div>
 <script>
